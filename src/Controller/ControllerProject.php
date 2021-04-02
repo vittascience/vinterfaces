@@ -93,7 +93,6 @@ class ControllerProject extends Controller
             'delete_project' => function ($data) {
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $data['link']));
-                var_dump($project);
                 $toReturn = array("name" => $project->getName(), "link" => $project->getLink());
                 $this->entityManager->remove($project);
                 $this->entityManager->flush();
