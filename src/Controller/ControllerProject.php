@@ -243,6 +243,43 @@ class ControllerProject extends Controller
                 $_SESSION['lti_project_id'] = $ltiProjectNotAlreadySubmitted->getId();
                 return $userProject;
                 
+            },
+            'lti_student_submit_project' => function(){
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
+
+                // bind and sanitize incoming data
+                $ltiProjectId = !empty($_POST['lti_project_id']) ? intval($_POST['lti_project_id']) : null;
+                $isSubmitted = empty($_POST['is_submitted']) ? boolval($_POST['is_submitted']) : 0;
+
+                // initialize empty $errors array and check for errors
+                $errors = [];
+                if(empty($ltiProjectId)) $errors['ltiProjectIdInvalid'] = true;
+                if(empty($isSubmitted)) $errors['isSubmittedInvalid'] = true;
+
+                // some errors found, return them
+                if(!empty($errors)){
+                    return array('errors'=> $errors);
+                }
+
+                // no errors, get lti Project from interfaces_lti_projects table
+                $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->find($ltiProjectId);
+
+                // no project found with the provided id, return an error
+                if(!$ltiProjectFound){
+                    return array('errorType'=>'ltiProjectNotFound');
+                }
+
+                // project founc, update and save it
+                $ltiProjectFound->setIsSubmitted($isSubmitted);
+                $this->entityManager->persist($ltiProjectFound);
+                $this->entityManager->flush();
+
+                return $ltiProjectFound;
             }
         );
     }
