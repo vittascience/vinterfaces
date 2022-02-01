@@ -3,8 +3,12 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
+use Python\Entity\UnitTests;
 use Interfaces\Entity\Project;
 use Interfaces\Entity\LtiProject;
+use Python\Entity\ExercisePython;
+use Python\Entity\UnitTestsInputs;
+use Python\Entity\UnitTestsOutputs;
 
 class ControllerProject extends Controller
 {
@@ -212,6 +216,11 @@ class ControllerProject extends Controller
                     $projectDuplicated->setPublic($project->isPublic());
                     $projectDuplicated->setLink(uniqid());
                     $projectDuplicated->setInterface($project->getInterface());
+
+                    /////////////////////////////////////////
+
+                    return $this->assignRelatedExercicesAndTestsToStudent($project);
+                    /////////////////////////////////////////
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
 
@@ -272,5 +281,75 @@ class ControllerProject extends Controller
                 return $ltiProjectFound;
             }
         );
+    }
+
+    public function assignRelatedExercicesAndTestsToStudent($project){
+       
+        $this->entityManager->getConnection()->beginTransaction();
+        $success = false;
+        try{
+            // get python exercice
+            $pythonExerciseFound = $this->entityManager
+                ->getRepository(ExercisePython::class)
+                ->findOneByProject($project);
+            
+            if($pythonExerciseFound){
+                // we create and save the exercise with the related project
+                $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
+                $duplicatedPythonExercise->setProject($project);
+                $this->entityManager->persist($duplicatedPythonExercise);
+                $this->entityManager->flush();
+            }
+
+            // get python test related to this exercise in python_tests table
+            $pythonTest = $this->entityManager
+                ->getRepository(UnitTests::class)
+                ->findOneByExercise($pythonExerciseFound);
+
+            if($pythonTest){
+                // we create and save the python test with the related exercise
+                $duplicatedPythonTest = new UnitTests();
+                $duplicatedPythonTest->setExercise($pythonExerciseFound);
+                $this->entityManager->persist($duplicatedPythonTest);
+                $this->entityManager->flush();
+            }
+
+            // get unit tests inputs related to this unit test in python_tests_inputs
+            $pythonTestInputs = $this->entityManager
+                ->getRepository(UnitTestsInputs::class)
+                ->findByUnitTest($pythonTest);
+
+            if($pythonTestInputs){
+                foreach($pythonTestInputs as $pythonTestInput){
+                    $duplicatedTestInput = new UnitTestsInputs();
+                    $duplicatedTestInput->setUnitTest($pythonTestInput->getUnitTest());
+                    $duplicatedTestInput->setValue($pythonTestInput->getValue());
+                    $this->entityManager->persist($duplicatedTestInput);
+                    $this->entityManager->flush();
+                }
+            }
+
+            $pythonTestOutputs = $this->entityManager
+                ->getRepository(UnitTestsOutputs::class)
+                ->findByUnitTest($pythonTest);
+            
+            if($pythonTestOutputs){
+                foreach($pythonTestOutputs as $pythonTestOutput){
+                    $duplicatedTestOutput = new UnitTestsOutputs();
+                    $duplicatedTestOutput->setUnitTest($pythonTestOutput->getUnitTest());
+                    $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
+                    $this->entityManager->persist($duplicatedTestOutput);
+                    $this->entityManager->flush();
+                }
+            }
+            $this->entityManager->getConnection()->commit();
+            $success = true;
+            return $pythonTestOutputs;
+        } catch(\Exception $e){
+            $this->entityManager->getConnection()->rollback();
+            $success = false;
+
+        }
+        
     }
 }
