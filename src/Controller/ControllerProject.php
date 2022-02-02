@@ -3,8 +3,12 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
+use Python\Entity\UnitTests;
 use Interfaces\Entity\Project;
 use Interfaces\Entity\LtiProject;
+use Python\Entity\ExercisePython;
+use Python\Entity\UnitTestsInputs;
+use Python\Entity\UnitTestsOutputs;
 
 class ControllerProject extends Controller
 {
@@ -148,9 +152,9 @@ class ControllerProject extends Controller
                 return false;
             },
             'lti_teacher_duplicate_project'=>function() { 
-
+               
                 // accept only POST request
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"]; 
 
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
@@ -215,6 +219,13 @@ class ControllerProject extends Controller
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
 
+                    // save Exercise and related unit tests
+                    $success = $this->assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated);
+                   
+                    if(!$success){
+                        return array('error'=> "ExercisesAndUnitTestsNotSavedProperly");
+                    } 
+
                     // we create a ltiProject entry in interfaces_lti_projects and save it
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);
@@ -272,5 +283,78 @@ class ControllerProject extends Controller
                 return $ltiProjectFound;
             }
         );
+    }
+
+    public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
+       
+        $this->entityManager->getConnection()->beginTransaction();
+        $success = true;
+        try{
+            // get python exercice
+            $pythonExerciseFound = $this->entityManager
+                ->getRepository(ExercisePython::class)
+                ->findOneByProject($project);
+
+            if($pythonExerciseFound){
+
+                // we create and save the exercise with the related project
+                $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
+                $duplicatedPythonExercise->setProject($projectDuplicated);
+                $this->entityManager->persist($duplicatedPythonExercise);          
+
+                // get python test related to this exercise in python_tests table
+                $pythonTest = $this->entityManager
+                    ->getRepository(UnitTests::class)
+                    ->findOneByExercise($pythonExerciseFound);
+
+                if(!$pythonTest) $success = false;
+            
+                // we create and save the python test with the related exercise
+                $duplicatedPythonTest = new UnitTests();
+                $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
+                $duplicatedPythonTest->setHint($pythonTest->getHint());
+                $this->entityManager->persist($duplicatedPythonTest);
+
+                // get unit tests inputs related to this unit test in python_tests_inputs
+                $pythonTestInputs = $this->entityManager
+                    ->getRepository(UnitTestsInputs::class)
+                    ->findByUnitTest($pythonTest);
+
+                if(!$pythonTestInputs) $success = false;
+
+                foreach($pythonTestInputs as $pythonTestInput){
+                    $duplicatedTestInput = new UnitTestsInputs();
+                    $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
+                    $duplicatedTestInput->setValue($pythonTestInput->getValue());
+                    $this->entityManager->persist($duplicatedTestInput);
+                }
+                
+                $pythonTestOutputs = $this->entityManager
+                    ->getRepository(UnitTestsOutputs::class)
+                    ->findByUnitTest($pythonTest);
+                
+                if(!$pythonTestOutputs) $success = false;
+
+                foreach($pythonTestOutputs as $pythonTestOutput){
+                    $duplicatedTestOutput = new UnitTestsOutputs();
+                    $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
+                    $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
+                    $this->entityManager->persist($duplicatedTestOutput);
+                    
+                }
+            }
+            
+            if($success == true){
+                $this->entityManager->flush();
+                $this->entityManager->getConnection()->commit();
+                return $success;
+            } else{
+                throw new \Exception("Something went wrong");
+            }
+        } catch(\Exception $e){
+            $this->entityManager->getConnection()->rollback();
+            return $success = false; 
+        }
+        
     }
 }
