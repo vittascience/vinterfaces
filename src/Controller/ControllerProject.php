@@ -7,6 +7,7 @@ use Python\Entity\UnitTests;
 use Interfaces\Entity\Project;
 use Interfaces\Entity\LtiProject;
 use Python\Entity\ExercisePython;
+use Python\Entity\ExercisePythonFrames;
 use Python\Entity\UnitTestsInputs;
 use Python\Entity\UnitTestsOutputs;
 
@@ -219,8 +220,13 @@ class ControllerProject extends Controller
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
 
-                    // save Exercise and related unit tests
-                    $success = $this->assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated);
+                    if($project->getInterface() == 'python'){
+                        // save Exercise and related unit tests
+                        $success = $this->assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated);
+                    } else {
+                        // save Exercise and related unit tests
+                        $success =  $this->assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated);
+                    }
                    
                     if(!$success){
                         return array('error'=> "ExercisesAndUnitTestsNotSavedProperly");
@@ -356,5 +362,52 @@ class ControllerProject extends Controller
             return $success = false; 
         }
         
+    }
+    public function assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated){
+        //return array('msg'=> 'OKI FOR FRAMES OR NOT');
+        $this->entityManager->getConnection()->beginTransaction(); 
+        $success = true;
+        try{
+            // get python exercice
+            $pythonExerciseFound = $this->entityManager
+                ->getRepository(ExercisePython::class)
+                ->findOneByProject($project);
+
+            if($pythonExerciseFound){
+
+                // we create and save the exercise with the related project
+                $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
+                $duplicatedPythonExercise->setProject($projectDuplicated);
+                $this->entityManager->persist($duplicatedPythonExercise);
+
+                // get the frames
+                $framesFound = $this->entityManager
+                    ->getRepository(ExercisePythonFrames::class)
+                    ->findByExercise($pythonExerciseFound);
+                
+                if(!$framesFound) $success = false;
+
+                foreach($framesFound as $frameFound){
+                    $duplicatedFrame = new ExercisePythonFrames();
+                    $duplicatedFrame->setExercise($duplicatedPythonExercise);
+                    $duplicatedFrame->setFrame($frameFound->getFrame());
+                    $duplicatedFrame->setComponent($frameFound->getComponent());
+                    $duplicatedFrame->setValue($frameFound->getValue());
+                    $this->entityManager->persist($duplicatedFrame);
+                }
+            }
+            
+            
+            if($success == true){
+                $this->entityManager->flush();
+                $this->entityManager->getConnection()->commit();
+                return $success;
+            } else{
+                throw new \Exception("Something went wrong");
+            }
+        } catch(\Exception $e){
+            $this->entityManager->getConnection()->rollback();
+            return $success = false; 
+        }
     }
 }
