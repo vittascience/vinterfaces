@@ -286,7 +286,10 @@ class ControllerProject extends Controller
                 $this->entityManager->persist($ltiProjectFound);
                 $this->entityManager->flush();
 
-                return $ltiProjectFound;
+                return array(
+                    'success' => true,
+                    'id'=> $ltiProjectFound->getId()
+                );
             }
         );
     }
@@ -309,45 +312,47 @@ class ControllerProject extends Controller
                 $this->entityManager->persist($duplicatedPythonExercise);          
 
                 // get python test related to this exercise in python_tests table
-                $pythonTest = $this->entityManager
+                $pythonTests = $this->entityManager
                     ->getRepository(UnitTests::class)
-                    ->findOneByExercise($pythonExerciseFound);
+                    ->findByExercise($pythonExerciseFound);
 
-                if(!$pythonTest) $success = false;
+                if(!$pythonTests) $success = false;
             
-                // we create and save the python test with the related exercise
-                $duplicatedPythonTest = new UnitTests();
-                $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
-                $duplicatedPythonTest->setHint($pythonTest->getHint());
-                $this->entityManager->persist($duplicatedPythonTest);
+                foreach($pythonTests as $pythonTest){
+                    // we create and save the python test with the related exercise
+                    $duplicatedPythonTest = new UnitTests();
+                    $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
+                    $duplicatedPythonTest->setHint($pythonTest->getHint());
+                    $this->entityManager->persist($duplicatedPythonTest);
 
-                // get unit tests inputs related to this unit test in python_tests_inputs
-                $pythonTestInputs = $this->entityManager
-                    ->getRepository(UnitTestsInputs::class)
-                    ->findByUnitTest($pythonTest);
-
-                if(!$pythonTestInputs) $success = false;
-
-                foreach($pythonTestInputs as $pythonTestInput){
-                    $duplicatedTestInput = new UnitTestsInputs();
-                    $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
-                    $duplicatedTestInput->setValue($pythonTestInput->getValue());
-                    $this->entityManager->persist($duplicatedTestInput);
-                }
-                
-                $pythonTestOutputs = $this->entityManager
-                    ->getRepository(UnitTestsOutputs::class)
-                    ->findByUnitTest($pythonTest);
-                
-                if(!$pythonTestOutputs) $success = false;
-
-                foreach($pythonTestOutputs as $pythonTestOutput){
-                    $duplicatedTestOutput = new UnitTestsOutputs();
-                    $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
-                    $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
-                    $this->entityManager->persist($duplicatedTestOutput);
+                    // get unit tests inputs related to this unit test in python_tests_inputs
+                    $pythonTestInputs = $this->entityManager
+                        ->getRepository(UnitTestsInputs::class)
+                        ->findByUnitTest($pythonTest);
                     
-                }
+                    if(!$pythonTestInputs) $success = false;
+
+                    foreach($pythonTestInputs as $pythonTestInput){
+                        $duplicatedTestInput = new UnitTestsInputs();
+                        $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
+                        $duplicatedTestInput->setValue($pythonTestInput->getValue());
+                        $this->entityManager->persist($duplicatedTestInput);
+                    }
+                    
+                    $pythonTestOutputs = $this->entityManager
+                        ->getRepository(UnitTestsOutputs::class)
+                        ->findByUnitTest($pythonTest);
+                    
+                    if(!$pythonTestOutputs) $success = false;
+
+                    foreach($pythonTestOutputs as $pythonTestOutput){
+                        $duplicatedTestOutput = new UnitTestsOutputs();
+                        $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
+                        $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
+                        $this->entityManager->persist($duplicatedTestOutput);
+                        
+                    }
+                }  
             }
             
             if($success == true){
