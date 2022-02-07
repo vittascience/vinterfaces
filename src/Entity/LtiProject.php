@@ -5,6 +5,7 @@ namespace Interfaces\Entity;
 use User\Entity\User;
 use Doctrine\ORM\Mapping as ORM;
 use Interfaces\Repository\LtiProjectRepository;
+use Utils\Exceptions\EntityDataIntegrityException;
 
 /**
  * @ORM\Entity(repositoryClass=LtiProjectRepository::class)
@@ -29,22 +30,22 @@ class LtiProject {
     /**
      * @ORM\Column(name="user_project_link",type="string",nullable="false")
      */
-    private $userProjectLink;
+    private $userProjectLink = '';
 
     /**
      * @ORM\Column(name="lti_course_id",type="string",nullable="false")
      */
-    private $ltiCourseId;
+    private $ltiCourseId = '';
 
     /**
      * @ORM\Column(name="lti_resource_id", type="string", nullable="false")
      */
-    private $ltiResourceLinkId;
+    private $ltiResourceLinkId = '';
 
     /**
      * @ORM\Column(name="is_submitted", type="boolean",nullable="false")
      */
-    private $isSubmitted;
+    private $isSubmitted = false;
 
     /**
      * Get the value of id
@@ -69,6 +70,9 @@ class LtiProject {
      */ 
     public function setUser($user)
     {
+        if(!($user instanceof User)){
+            throw new EntityDataIntegrityException("The user has to be an instance of User class");
+        }
         $this->user = $user;
 
         return $this;
@@ -89,6 +93,9 @@ class LtiProject {
      */ 
     public function setUserProjectLink($userProjectLink)
     {
+        if(!is_string($userProjectLink)){
+            throw new EntityDataIntegrityException("The user project link has to be a string");
+        }
         $this->userProjectLink = $userProjectLink;
 
         return $this;
@@ -109,6 +116,9 @@ class LtiProject {
      */ 
     public function setLtiCourseId($ltiCourseId)
     {
+        if(!is_string($ltiCourseId)){
+            throw new EntityDataIntegrityException("The lti course id has to be a string");
+        }
         $this->ltiCourseId = $ltiCourseId;
 
         return $this;
@@ -129,6 +139,9 @@ class LtiProject {
      */ 
     public function setLtiResourceLinkId($ltiResourceLinkId)
     {
+        if(!is_string($ltiResourceLinkId)){
+            throw new EntityDataIntegrityException("The resource link id has to be a string");
+        }
         $this->ltiResourceLinkId = $ltiResourceLinkId;
 
         return $this;
@@ -149,6 +162,9 @@ class LtiProject {
      */ 
     public function setIsSubmitted($isSubmitted)
     {
+        if(!is_bool($isSubmitted)){
+            throw new EntityDataIntegrityException("The isSubmitted variable has to be a boolean value ");
+        }
         $this->isSubmitted = $isSubmitted;
 
         return $this;
