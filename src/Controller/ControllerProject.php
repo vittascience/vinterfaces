@@ -302,7 +302,7 @@ class ControllerProject extends Controller
         );
     }
 
-    public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
+    /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
         // get python exercice
          $pythonExerciseFound = $project->getExercise();
  
@@ -312,7 +312,7 @@ class ControllerProject extends Controller
          }
  
 
-         
+
          $this->entityManager->getConnection()->beginTransaction();
          try{
              
@@ -425,5 +425,5 @@ class ControllerProject extends Controller
              $this->entityManager->getConnection()->rollback();
              return false;
          }
-     }
+     } */
 }
