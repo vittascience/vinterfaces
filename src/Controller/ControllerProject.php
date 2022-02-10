@@ -218,10 +218,17 @@ class ControllerProject extends Controller
                     $projectDuplicated->setPublic($project->isPublic());
                     $projectDuplicated->setLink(uniqid());
                     $projectDuplicated->setInterface($project->getInterface());
+
+                     // set exercise 
+                     if($project->getExercise()){
+                        $projectDuplicated->setExercise($project->getExercise());
+                        //$projectDuplicated->setIsExerciseCreator(false);
+                    }
+
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
 
-                    if($project->getInterface() == 'python'){
+                    /* if($project->getInterface() == 'python'){
                         // save Exercise and related unit tests
                         $success = $this->assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated);
                     } else {
@@ -231,8 +238,8 @@ class ControllerProject extends Controller
                    
                     if(!$success){
                         return array('error'=> "ExercisesAndUnitTestsNotSavedProperly");
-                    } 
-
+                    }  
+                    */
                     // we create a ltiProject entry in interfaces_lti_projects and save it
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);

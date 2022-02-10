@@ -495,7 +495,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
         return $classInstance;
     }
-    
+
      /**
      * Get the value of isExerciseCreator
      *
@@ -503,7 +503,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */ 
     public function getIsExerciseCreator()
     {
-        return $this->isExerciseCreator;
+        return $this->isExerciseCreator; 
     }
 
     /**
