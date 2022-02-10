@@ -311,6 +311,8 @@ class ControllerProject extends Controller
              return true;
          }
  
+
+         
          $this->entityManager->getConnection()->beginTransaction();
          try{
              
@@ -381,9 +383,7 @@ class ControllerProject extends Controller
      
      public function assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated){
          // get "not python" exercice (misleading entity name, these exercises use frames like smt32)
-         $pythonExerciseFound = $this->entityManager
-             ->getRepository(ExercisePython::class)
-             ->findOneByProject($project);
+         $pythonExerciseFound = $project->getExercise();
          
          if(!$pythonExerciseFound){
              // no exercise for this project, return true to go back in main method
