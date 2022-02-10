@@ -209,6 +209,7 @@ class ControllerProject extends Controller
                         $project->getName(), 
                         $project->getDescription()
                     );
+
                     $projectDuplicated->setUser($user);
                     $projectDuplicated->setDateUpdated();
                     $projectDuplicated->setCode($project->getCode());
@@ -296,9 +297,7 @@ class ControllerProject extends Controller
 
     public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
         // get python exercice
-         $pythonExerciseFound = $this->entityManager
-             ->getRepository(ExercisePython::class)
-             ->findOneByProject($project);
+         $pythonExerciseFound = $project->getExercise();
  
          if(!$pythonExerciseFound){
              // no exercise for this project, return true to go back in main method

@@ -29,6 +29,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @var User
      */
     private $user = null;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Python\Entity\ExercisePython")
+     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
+     */
+    private $exercise;
+
     /**
      * @ORM\Column(name="project_name", type="string", length=100, nullable=false, options={"default":"Unamed"})
      * @var string
@@ -142,7 +149,27 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("user attribute needs to be an instance of User or null");
         }
     }
+    
+    /**
+     * Get the value of exercise
+     */ 
+    public function getExercise()
+    {
+        return $this->exercise;
+    }
 
+    /**
+     * Set the value of exercise
+     *
+     * @return  self
+     */ 
+    public function setExercise($exercise)
+    {
+        $this->exercise = $exercise;
+
+        return $this;
+    }
+    
     /**
      * @return string
      */
