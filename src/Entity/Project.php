@@ -99,6 +99,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $activitySolve = false;
 
+/**
+     * @ORM\Column(name="is_exercise_creator", type="boolean", nullable=false, options={"default":false})
+     *
+     * @var bool
+     */
+    private $isExerciseCreator = false;
+
     /**
      * Project constructor
      * @param string $name
@@ -487,5 +494,29 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             $classInstance->{$attributeName} = $attributeValue;
         }
         return $classInstance;
+    }
+    
+     /**
+     * Get the value of isExerciseCreator
+     *
+     * @return  bool
+     */ 
+    public function getIsExerciseCreator()
+    {
+        return $this->isExerciseCreator;
+    }
+
+    /**
+     * Set the value of isExerciseCreator
+     *
+     * @param  bool  $isExerciseCreator
+     *
+     * @return  self
+     */ 
+    public function setIsExerciseCreator($isExerciseCreator)
+    {
+        $this->isExerciseCreator = $isExerciseCreator; 
+
+        return $this;
     }
 }
