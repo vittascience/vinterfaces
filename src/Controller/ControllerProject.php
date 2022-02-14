@@ -168,7 +168,7 @@ class ControllerProject extends Controller
  
                 // initialize empty $errors array
                 $errors = [];
-                if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
+                //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
                 if(empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
                 if(empty($projectLink)) $errors['projectLinkInvalid'] = true;
  
@@ -244,9 +244,11 @@ class ControllerProject extends Controller
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);
                     $ltiProject->setUserProjectLink($projectDuplicated->getLink());
-                    $ltiProject->setLtiCourseId($ltiCourseId);
                     $ltiProject->setLtiResourceLinkId($ltiResourceLinkId);
                     $ltiProject->setIsSubmitted(false);
+                    if($ltiCourseId){
+                        $ltiProject->setLtiCourseId($ltiCourseId);
+                    }
 
                     $this->entityManager->persist($ltiProject);
                     $this->entityManager->flush();
