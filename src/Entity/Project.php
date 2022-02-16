@@ -31,7 +31,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $user = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Python\Entity\ExercisePython")
+     * @ORM\ManyToOne(targetEntity="Python\Entity\ExercisePython",inversedBy="projects")
      * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
      */
     private $exercise;
