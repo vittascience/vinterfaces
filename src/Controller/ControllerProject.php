@@ -191,15 +191,21 @@ class ControllerProject extends Controller
                     return array('errorType'=> 'projectNotFoundWithProvidedLink');
                 }
 
+                //set up defaults params( without $ltiCourseIs as it is optional)
+                $queryParams = array(
+                    'user' => $user->getId(),
+                    'ltiResourceLinkId' => $ltiResourceLinkId,
+                    'isSubmitted' => 0
+                );
+                
+                if($ltiCourseId){
+                    $queryParams['ltiCourseId'] = $ltiCourseId;
+                }
+               
                 // get the lti project from interfaces_lti_project table
                 $ltiProjectNotAlreadySubmitted = $this->entityManager
-                                    ->getRepository(LtiProject::class)
-                                    ->findOneBy(array(
-                                        'user' => $user->getId(),
-                                        'ltiCourseId' => $ltiCourseId,
-                                        'ltiResourceLinkId' => $ltiResourceLinkId,
-                                        'isSubmitted' => 0
-                                    ));
+                ->getRepository(LtiProject::class)
+                ->findOneBy($queryParams);
 
                 // no reference of this project in ltiProject ($user + $courseId + $ltiResourceId do not exists)
                 if(!$ltiProjectNotAlreadySubmitted){
