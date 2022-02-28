@@ -93,6 +93,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $activitySolve = false;
 
     /**
+     * @ORM\Column(name="exercise_statement", type="text", nullable=true)
+     *
+     * @var string
+     */
+    private $exerciseStatement;
+
+    /**
      * Project constructor
      * @param string $name
      * @param string $description
@@ -395,6 +402,30 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         } else {
             throw new EntityDataIntegrityException("activitySolve needs to be boolean");
         }
+    }
+
+    /**
+     * Get the value of exerciseStatement
+     *
+     * @return  string
+     */ 
+    public function getExerciseStatement()
+    {
+        return $this->exerciseStatement;
+    }
+
+    /**
+     * Set the value of exerciseStatement
+     *
+     * @param  string  $exerciseStatement
+     *
+     * @return  self
+     */ 
+    public function setExerciseStatement($exerciseStatement)
+    {
+        $this->exerciseStatement = $exerciseStatement;
+
+        return $this;
     }
 
     public function copy($objectToCopyFrom)
