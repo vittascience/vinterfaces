@@ -471,7 +471,8 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'public' => $this->isPublic(),
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
-            'interface' => $this->getInterface()
+            'interface' => $this->getInterface(),
+            'exercise_statement'=> $this->getExerciseStatement()
         ];
     }
 
