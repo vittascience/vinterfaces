@@ -290,6 +290,48 @@ class ControllerProject extends Controller
                     'success' => true,
                     'id'=> $ltiProjectFound->getId()
                 );
+            },
+            'add_or_update_exercise_statement'=> function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "projectAddOrUpdateExerciseStatementNotRetrievedNotAuthenticated"];
+
+                // bind and sanitize data 
+                $userId = intval($_SESSION['id']);
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $exerciseStatement = !empty($_POST['exercise_statement']) 
+                                        ? htmlspecialchars(strip_tags(trim($_POST['exercise_statement'])))
+                                        : '';
+
+                // check for errors
+                $errors = [];
+                if(empty($projectId)){
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+
+                // some errors found, return them
+                if(!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get the user and project from interfaces_projects
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+                $projectExists = $this->entityManager
+                                    ->getRepository(Project::class)
+                                    ->findOneBy(array(
+                                        'id' => $projectId,
+                                        'user' => $user
+                                    ));
+
+                if(!$projectExists){
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors'=> $errors);
+                }   
+            
+                $projectExists->setExerciseStatement($exerciseStatement);
+                $this->entityManager->flush();
+
+                return array('success'=> true);
             }
         );
     }
