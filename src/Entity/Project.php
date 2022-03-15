@@ -472,7 +472,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
             'interface' => $this->getInterface(),
-            'exercise_statement'=> $this->getExerciseStatement()
+            'exerciseStatement'=> $this->getExerciseStatement()
         ];
     }
 
