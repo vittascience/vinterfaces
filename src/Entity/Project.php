@@ -29,6 +29,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @var User
      */
     private $user = null;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Python\Entity\ExercisePython",inversedBy="projects")
+     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
+     */
+    private $exercise;
+
     /**
      * @ORM\Column(name="project_name", type="string", length=100, nullable=false, options={"default":"Unamed"})
      * @var string
@@ -92,6 +99,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $activitySolve = false;
 
+/**
+     * @ORM\Column(name="is_exercise_creator", type="boolean", nullable=false, options={"default":false})
+     *
+     * @var bool
+     */
+    private $isExerciseCreator = false;
+
     /**
      * @ORM\Column(name="exercise_statement", type="text", nullable=true)
      *
@@ -149,7 +163,27 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("user attribute needs to be an instance of User or null");
         }
     }
+    
+    /**
+     * Get the value of exercise
+     */ 
+    public function getExercise()
+    {
+        return $this->exercise;
+    }
 
+    /**
+     * Set the value of exercise
+     *
+     * @return  self
+     */ 
+    public function setExercise($exercise)
+    {
+        $this->exercise = $exercise;
+
+        return $this;
+    }
+    
     /**
      * @return string
      */
@@ -492,5 +526,29 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             $classInstance->{$attributeName} = $attributeValue;
         }
         return $classInstance;
+    }
+
+     /**
+     * Get the value of isExerciseCreator
+     *
+     * @return  bool
+     */ 
+    public function getIsExerciseCreator()
+    {
+        return $this->isExerciseCreator; 
+    }
+
+    /**
+     * Set the value of isExerciseCreator
+     *
+     * @param  bool  $isExerciseCreator
+     *
+     * @return  self
+     */ 
+    public function setIsExerciseCreator($isExerciseCreator)
+    {
+        $this->isExerciseCreator = $isExerciseCreator; 
+
+        return $this;
     }
 }

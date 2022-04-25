@@ -168,7 +168,7 @@ class ControllerProject extends Controller
  
                 // initialize empty $errors array
                 $errors = [];
-                if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
+                //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
                 if(empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
                 if(empty($projectLink)) $errors['projectLinkInvalid'] = true;
  
@@ -191,15 +191,21 @@ class ControllerProject extends Controller
                     return array('errorType'=> 'projectNotFoundWithProvidedLink');
                 }
 
+                //set up defaults params( without $ltiCourseIs as it is optional)
+                $queryParams = array(
+                    'user' => $user->getId(),
+                    'ltiResourceLinkId' => $ltiResourceLinkId,
+                    'isSubmitted' => 0
+                );
+                
+                if($ltiCourseId){
+                    $queryParams['ltiCourseId'] = $ltiCourseId;
+                }
+               
                 // get the lti project from interfaces_lti_project table
                 $ltiProjectNotAlreadySubmitted = $this->entityManager
-                                    ->getRepository(LtiProject::class)
-                                    ->findOneBy(array(
-                                        'user' => $user->getId(),
-                                        'ltiCourseId' => $ltiCourseId,
-                                        'ltiResourceLinkId' => $ltiResourceLinkId,
-                                        'isSubmitted' => 0
-                                    ));
+                ->getRepository(LtiProject::class)
+                ->findOneBy($queryParams);
 
                 // no reference of this project in ltiProject ($user + $courseId + $ltiResourceId do not exists)
                 if(!$ltiProjectNotAlreadySubmitted){
@@ -209,6 +215,7 @@ class ControllerProject extends Controller
                         $project->getName(), 
                         $project->getDescription()
                     );
+
                     $projectDuplicated->setUser($user);
                     $projectDuplicated->setDateUpdated();
                     $projectDuplicated->setCode($project->getCode());
@@ -217,10 +224,17 @@ class ControllerProject extends Controller
                     $projectDuplicated->setPublic($project->isPublic());
                     $projectDuplicated->setLink(uniqid());
                     $projectDuplicated->setInterface($project->getInterface());
+
+                     // set exercise 
+                     if($project->getExercise()){
+                        $projectDuplicated->setExercise($project->getExercise());
+                        //$projectDuplicated->setIsExerciseCreator(false);
+                    }
+
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
 
-                    if($project->getInterface() == 'python'){
+                    /* if($project->getInterface() == 'python'){
                         // save Exercise and related unit tests
                         $success = $this->assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated);
                     } else {
@@ -230,15 +244,17 @@ class ControllerProject extends Controller
                    
                     if(!$success){
                         return array('error'=> "ExercisesAndUnitTestsNotSavedProperly");
-                    } 
-
+                    }  
+                    */
                     // we create a ltiProject entry in interfaces_lti_projects and save it
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);
                     $ltiProject->setUserProjectLink($projectDuplicated->getLink());
-                    $ltiProject->setLtiCourseId($ltiCourseId);
                     $ltiProject->setLtiResourceLinkId($ltiResourceLinkId);
                     $ltiProject->setIsSubmitted(false);
+                    if($ltiCourseId){
+                        $ltiProject->setLtiCourseId($ltiCourseId);
+                    }
 
                     $this->entityManager->persist($ltiProject);
                     $this->entityManager->flush();
@@ -336,17 +352,17 @@ class ControllerProject extends Controller
         );
     }
 
-    public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
+    /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
         // get python exercice
-         $pythonExerciseFound = $this->entityManager
-             ->getRepository(ExercisePython::class)
-             ->findOneByProject($project);
+         $pythonExerciseFound = $project->getExercise();
  
          if(!$pythonExerciseFound){
              // no exercise for this project, return true to go back in main method
              return true;
          }
  
+
+
          $this->entityManager->getConnection()->beginTransaction();
          try{
              
@@ -417,9 +433,7 @@ class ControllerProject extends Controller
      
      public function assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated){
          // get "not python" exercice (misleading entity name, these exercises use frames like smt32)
-         $pythonExerciseFound = $this->entityManager
-             ->getRepository(ExercisePython::class)
-             ->findOneByProject($project);
+         $pythonExerciseFound = $project->getExercise();
          
          if(!$pythonExerciseFound){
              // no exercise for this project, return true to go back in main method
@@ -461,5 +475,5 @@ class ControllerProject extends Controller
              $this->entityManager->getConnection()->rollback();
              return false;
          }
-     }
+     } */
 }
