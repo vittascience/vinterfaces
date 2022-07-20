@@ -31,7 +31,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $user = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Python\Entity\ExercisePython",inversedBy="projects")
+     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython",inversedBy="projects")
      * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
      */
     private $exercise;
@@ -99,7 +99,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $activitySolve = false;
 
-/**
+    /**
      * @ORM\Column(name="is_exercise_creator", type="boolean", nullable=false, options={"default":false})
      *
      * @var bool
@@ -163,10 +163,10 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("user attribute needs to be an instance of User or null");
         }
     }
-    
+
     /**
      * Get the value of exercise
-     */ 
+     */
     public function getExercise()
     {
         return $this->exercise;
@@ -176,14 +176,14 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * Set the value of exercise
      *
      * @return  self
-     */ 
+     */
     public function setExercise($exercise)
     {
         $this->exercise = $exercise;
 
         return $this;
     }
-    
+
     /**
      * @return string
      */
@@ -442,7 +442,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * Get the value of exerciseStatement
      *
      * @return  string
-     */ 
+     */
     public function getExerciseStatement()
     {
         return $this->exerciseStatement;
@@ -454,7 +454,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @param  string  $exerciseStatement
      *
      * @return  self
-     */ 
+     */
     public function setExerciseStatement($exerciseStatement)
     {
         $this->exerciseStatement = $exerciseStatement;
@@ -506,7 +506,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
             'interface' => $this->getInterface(),
-            'exerciseStatement'=> $this->getExerciseStatement()
+            'exerciseStatement' => $this->getExerciseStatement()
         ];
     }
 
@@ -528,14 +528,14 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $classInstance;
     }
 
-     /**
+    /**
      * Get the value of isExerciseCreator
      *
      * @return  bool
-     */ 
+     */
     public function getIsExerciseCreator()
     {
-        return $this->isExerciseCreator; 
+        return $this->isExerciseCreator;
     }
 
     /**
@@ -544,10 +544,10 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @param  bool  $isExerciseCreator
      *
      * @return  self
-     */ 
+     */
     public function setIsExerciseCreator($isExerciseCreator)
     {
-        $this->isExerciseCreator = $isExerciseCreator; 
+        $this->isExerciseCreator = $isExerciseCreator;
 
         return $this;
     }

@@ -3,13 +3,13 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
-use Python\Entity\UnitTests;
+use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\Project;
 use Interfaces\Entity\LtiProject;
-use Python\Entity\ExercisePython;
-use Python\Entity\ExercisePythonFrames;
-use Python\Entity\UnitTestsInputs;
-use Python\Entity\UnitTestsOutputs;
+use Interfaces\Entity\ExercisePython;
+use Interfaces\Entity\ExercisePythonFrames;
+use Interfaces\Entity\UnitTestsInputs;
+use Interfaces\Entity\UnitTestsOutputs;
 
 class ControllerProject extends Controller
 {
@@ -145,50 +145,50 @@ class ControllerProject extends Controller
             'is_autocorrected' => function ($data) {
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $data['link']));
-                $exercise = $this->entityManager->getRepository('Python\Entity\ExercisePython')
+                $exercise = $this->entityManager->getRepository('Interfaces\Entity\ExercisePython')
                     ->findOneBy(array("project" => $project->getId()));
                 if ($exercise) {
                     return true;
                 }
                 return false;
             },
-            'lti_teacher_duplicate_project'=>function() { 
-               
+            'lti_teacher_duplicate_project' => function () {
+
                 // accept only POST request
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"]; 
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
- 
+
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
                 $ltiCourseId = !empty($_POST['course_id']) ? $_POST['course_id'] : null;
                 $ltiResourceLinkId = !empty($_POST['resource_link_id']) ? $_POST['resource_link_id'] : null;
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
- 
+
                 // initialize empty $errors array
                 $errors = [];
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
-                if(empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
-                if(empty($projectLink)) $errors['projectLinkInvalid'] = true;
- 
+                if (empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
+                if (empty($projectLink)) $errors['projectLinkInvalid'] = true;
+
                 // some errors found, return them
-                if(!empty($errors)){
-                    return array('errors'=>$errors);
+                if (!empty($errors)) {
+                    return array('errors' => $errors);
                 }
-               
+
                 // get the user
                 $user = $this->entityManager
-                                ->getRepository(User::class)->find($userId);
-                                
+                    ->getRepository(User::class)->find($userId);
+
                 // get the project                        
                 $project = $this->entityManager
-                            ->getRepository('Interfaces\Entity\Project')
-                            ->findOneBy(array("link" => $projectLink));
+                    ->getRepository('Interfaces\Entity\Project')
+                    ->findOneBy(array("link" => $projectLink));
 
                 // the project does not exists, return an error
-                if(!$project){
-                    return array('errorType'=> 'projectNotFoundWithProvidedLink');
+                if (!$project) {
+                    return array('errorType' => 'projectNotFoundWithProvidedLink');
                 }
 
                 //set up defaults params( without $ltiCourseIs as it is optional)
@@ -197,22 +197,22 @@ class ControllerProject extends Controller
                     'ltiResourceLinkId' => $ltiResourceLinkId,
                     'isSubmitted' => 0
                 );
-                
-                if($ltiCourseId){
+
+                if ($ltiCourseId) {
                     $queryParams['ltiCourseId'] = $ltiCourseId;
                 }
-               
+
                 // get the lti project from interfaces_lti_project table
                 $ltiProjectNotAlreadySubmitted = $this->entityManager
-                ->getRepository(LtiProject::class)
-                ->findOneBy($queryParams);
+                    ->getRepository(LtiProject::class)
+                    ->findOneBy($queryParams);
 
                 // no reference of this project in ltiProject ($user + $courseId + $ltiResourceId do not exists)
-                if(!$ltiProjectNotAlreadySubmitted){
-                    
+                if (!$ltiProjectNotAlreadySubmitted) {
+
                     // we duplicate the project for this user and save it
                     $projectDuplicated = new Project(
-                        $project->getName(), 
+                        $project->getName(),
                         $project->getDescription()
                     );
 
@@ -225,8 +225,8 @@ class ControllerProject extends Controller
                     $projectDuplicated->setLink(uniqid());
                     $projectDuplicated->setInterface($project->getInterface());
 
-                     // set exercise 
-                     if($project->getExercise()){
+                    // set exercise 
+                    if ($project->getExercise()) {
                         $projectDuplicated->setExercise($project->getExercise());
                         //$projectDuplicated->setIsExerciseCreator(false);
                     }
@@ -252,7 +252,7 @@ class ControllerProject extends Controller
                     $ltiProject->setUserProjectLink($projectDuplicated->getLink());
                     $ltiProject->setLtiResourceLinkId($ltiResourceLinkId);
                     $ltiProject->setIsSubmitted(false);
-                    if($ltiCourseId){
+                    if ($ltiCourseId) {
                         $ltiProject->setLtiCourseId($ltiCourseId);
                     }
 
@@ -265,19 +265,18 @@ class ControllerProject extends Controller
                 }
 
                 $userProject = $this->entityManager
-                            ->getRepository(Project::class)
-                            ->findOneByLink($ltiProjectNotAlreadySubmitted->getUserProjectLink());
-                
-                if(!$userProject){
-                    return array('errorType'=> "userProjectNotFound");
+                    ->getRepository(Project::class)
+                    ->findOneByLink($ltiProjectNotAlreadySubmitted->getUserProjectLink());
+
+                if (!$userProject) {
+                    return array('errorType' => "userProjectNotFound");
                 }
 
                 // save data in session
                 $_SESSION['lti_project_id'] = $ltiProjectNotAlreadySubmitted->getId();
                 return $userProject;
-                
             },
-            'lti_student_submit_project' => function(){
+            'lti_student_submit_project' => function () {
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -293,8 +292,8 @@ class ControllerProject extends Controller
                 $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->find($ltiProjectId);
 
                 // no project found with the provided id, return an error
-                if(!$ltiProjectFound){
-                    return array('errorType'=>'ltiProjectNotFound');
+                if (!$ltiProjectFound) {
+                    return array('errorType' => 'ltiProjectNotFound');
                 }
 
                 // project found, update and save it
@@ -304,10 +303,10 @@ class ControllerProject extends Controller
 
                 return array(
                     'success' => true,
-                    'id'=> $ltiProjectFound->getId()
+                    'id' => $ltiProjectFound->getId()
                 );
             },
-            'add_or_update_exercise_statement'=> function() {
+            'add_or_update_exercise_statement' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -317,37 +316,37 @@ class ControllerProject extends Controller
                 // bind and sanitize data 
                 $userId = intval($_SESSION['id']);
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $exerciseStatement = !empty($_POST['exercise_statement']) 
-                                        ? htmlspecialchars(strip_tags(trim($_POST['exercise_statement'])))
-                                        : '';
+                $exerciseStatement = !empty($_POST['exercise_statement'])
+                    ? htmlspecialchars(strip_tags(trim($_POST['exercise_statement'])))
+                    : '';
 
                 // check for errors
                 $errors = [];
-                if(empty($projectId)){
+                if (empty($projectId)) {
                     array_push($errors, array('errorType' => 'projectIdInvalid'));
                 }
 
                 // some errors found, return them
-                if(!empty($errors)) return array('errors' => $errors);
+                if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, get the user and project from interfaces_projects
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
                 $projectExists = $this->entityManager
-                                    ->getRepository(Project::class)
-                                    ->findOneBy(array(
-                                        'id' => $projectId,
-                                        'user' => $user
-                                    ));
+                    ->getRepository(Project::class)
+                    ->findOneBy(array(
+                        'id' => $projectId,
+                        'user' => $user
+                    ));
 
-                if(!$projectExists){
+                if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
-                    return array('errors'=> $errors);
-                }   
-            
+                    return array('errors' => $errors);
+                }
+
                 $projectExists->setExerciseStatement($exerciseStatement);
                 $this->entityManager->flush();
 
-                return array('success'=> true);
+                return array('success' => true);
             }
         );
     }
