@@ -4,15 +4,16 @@ namespace Interfaces\Controller;
 
 use DateTime;
 use DAO\RegularDAO;
-use GuzzleHttp\Client;
+use User\Entity\User;
 use Aws\Ec2\Ec2Client;
 use Aws\Ecs\EcsClient;
-use Aws\ElasticLoadBalancingV2\ElasticLoadBalancingV2Client;
+use GuzzleHttp\Client;
+use function Aws\filter;
 use Interfaces\Controller\Controller;
-use Interfaces\Entity\PythonContainers;
 use Interfaces\Entity\PythonWhitelist;
 
-use function Aws\filter;
+use Interfaces\Entity\PythonContainers;
+use Aws\ElasticLoadBalancingV2\ElasticLoadBalancingV2Client;
 
 class ControllerAws extends Controller
 {
@@ -31,9 +32,10 @@ class ControllerAws extends Controller
             'credentials' => [
                 'key' => $_ENV['VS_AWS_KEY'],
                 'secret' => $_ENV['VS_AWS_SECRET']
-            ]
+                ]
         ]);
-
+            
+            
         // initialize the EC2 client
         $this->clientEc2 = new Ec2Client([
             'version' => 'latest',
@@ -41,9 +43,9 @@ class ControllerAws extends Controller
             'credentials' => [
                 'key' => $_ENV['VS_AWS_KEY'],
                 'secret' => $_ENV['VS_AWS_SECRET']
-            ]
+                ]
         ]);
-
+                
         // initialize the ELB client
         $this->clientElb = new ElasticLoadBalancingV2Client([
             'version' => 'latest',
@@ -51,10 +53,11 @@ class ControllerAws extends Controller
             'credentials' => [
                 'key' => $_ENV['VS_AWS_KEY'],
                 'secret' => $_ENV['VS_AWS_SECRET']
-            ]
+                ]
         ]);
-
-
+                    
+                    
+        $this->user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => intval($_SESSION["id"])]) ?? null;
         $this->whiteListedRule = "arn:aws:elasticloadbalancing:eu-west-3:342829420373:listener-rule/app/VittascienceALB/d5218bfa7cdf4cd7/280e909132d6a679/7ad2e27090004e69";
         $this->WhiteList = $this->entityManager->getRepository(PythonWhitelist::class)->findAll();
 
@@ -152,7 +155,6 @@ class ControllerAws extends Controller
                 }
             },
             "getFreeContainer" => function () {
-
                 $accessKey = htmlspecialchars($_POST['accessKey']);
                 $domainReferer = parse_url($_POST['referer']);
                 $isExerciceWhitelist = false;
