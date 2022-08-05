@@ -113,6 +113,29 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $exerciseStatement;
 
+
+    /**
+     * @ORM\Column(name="shared_users", type="text", nullable=true)
+     *
+     * @var string
+     */
+    private $sharedUsers;
+
+    /**
+     * @ORM\Column(name="shared_link_rights", type="boolean", nullable=true, options={"default":false})
+     *
+     * @var string
+     */
+    private $sharedStatus;
+
+
+    /**
+     * @ORM\Column(name="shared_links", type="text", nullable=true)
+     *
+     * @var string
+     */
+    private $sharedLinks;
+
     /**
      * Project constructor
      * @param string $name
@@ -462,6 +485,80 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
+    /**
+     * Get the value of shared user
+     *
+     * @return  string
+     */
+    public function getSharedUsers()
+    {
+        return $this->sharedUsers;
+    }
+
+    /**
+     * Set the value of shared user
+     *
+     * @param  string  $sharedUser
+     *
+     * @return  self
+     */
+    public function setSharedUsers($sharedUsers)
+    {
+        $this->sharedUsers = $sharedUsers;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of shared link rights
+     *
+     * @return  string
+     */
+    public function getSharedStatus()
+    {
+        return $this->sharedStatus;
+    }
+
+    /**
+     * Set the value of shared link rights
+     *
+     * @param  string  $sharedStatus
+     *
+     * @return  self
+     */
+    public function setSharedStatus($sharedStatus)
+    {
+        $this->sharedStatus = $sharedStatus;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of shared link
+     *
+     * @return  string
+     */
+    public function getSharedLinks()
+    {
+        return $this->sharedLinks;
+    }
+
+    /**
+     * Set the value of shared link
+     *
+     * @param  string  $sharedLink
+     *
+     * @return  self
+     */
+    public function setSharedLinks($sharedLinks)
+    {
+        $this->sharedLinks = $sharedLinks;
+
+        return $this;
+    }
+
+
+
     public function copy($objectToCopyFrom)
     {
         if ($objectToCopyFrom instanceof self) {
@@ -493,6 +590,14 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         if ($user != null) {
             $user = $this->getUser()->jsonSerialize();
         }
+
+        $sharedUsers = @unserialize($this->getSharedUsers());
+        if ($sharedUsers) {
+            $sharedUsers = json_encode($sharedUsers);
+        } else {
+            $sharedUsers = null;
+        }
+
         return [
             'id' => $this->getId(),
             'user' => $user,
@@ -506,7 +611,9 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
             'interface' => $this->getInterface(),
-            'exerciseStatement' => $this->getExerciseStatement()
+            'exerciseStatement' => $this->getExerciseStatement(),
+            'sharedUsers' => $sharedUsers,
+            'sharedStatus' => $this->getSharedStatus(),
         ];
     }
 
