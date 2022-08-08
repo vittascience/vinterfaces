@@ -76,6 +76,7 @@ class ControllerProject extends Controller
                  */
 
                 $projectJSON = json_decode($data['project']);
+                $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
@@ -89,12 +90,12 @@ class ControllerProject extends Controller
                 }
 
                 $canUpdateProject = false;
-                if ($projectOwner->getId() == $this->user['id']) {
+                if ($projectOwner->getId() == $requesterId) {
                     $canUpdateProject = true;
                 } else {
                     if ($unserializedSharedUsers) {
                         foreach ($unserializedSharedUsers as $sharedUser) {
-                            if ($sharedUser['userId'] == $this->user['id']) {
+                            if ($sharedUser['userId'] == $requesterId) {
                                 if ($sharedUser['right'] == 'writting') {
                                     $canUpdateProject = true;
                                     break;
@@ -421,7 +422,7 @@ class ControllerProject extends Controller
                 }
 
                 // Format of the shared users array:
-                // [[userId: 1, right: "reading"], [userId: 2, right: "writing"]]...
+                // [[userId: 1, right: "reading"], [userId: 2, right: "writting"]]...
                 // check if the user is already shared with the project
                 $sharedUserAlreadyShared = false;
                 foreach ($unserializedSharedUsers as $sharedUser) {
@@ -433,7 +434,7 @@ class ControllerProject extends Controller
 
                 // if the user is not already shared, add it to the shared users array
                 if (!$sharedUserAlreadyShared) {
-                    array_push($unserializedSharedUsers, ['userId' => $sharedUserId, 'right' => 'reading']);
+                    array_push($unserializedSharedUsers, ['userId' => $sharedUserId, 'right' => $sharedRight]);
                 }
 
                 // update the shared users array in the project
@@ -485,7 +486,7 @@ class ControllerProject extends Controller
                 // bind and sanitize data
 
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $sharedLink = !empty($_POST['shared_link']) ? $_POST['shared_link'] : null;
+                $link = !empty($_POST['shared_link']) ? $_POST['shared_link'] : null;
 
                 // check for errors
                 $errors = [];
@@ -497,8 +498,7 @@ class ControllerProject extends Controller
                 if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, get the user and project from interfaces_projects
-                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
                 if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
@@ -511,10 +511,10 @@ class ControllerProject extends Controller
                 }
 
                 $right = null;
-                foreach ($sharedLinks as $link) {
-                    if ($link["writting"] == $sharedLink) {
+                foreach ($sharedLinks as $sharedLink) {
+                    if ($sharedLink["writting"] == $link) {
                         $right = "writting";
-                    } else if ($link["reading"] == $sharedLink) {
+                    } else if ($sharedLink["reading"] == $link) {
                         $right = "reading";
                     } else {
                         array_push($errors, array('errorType' => 'sharedLinkInvalid'));
