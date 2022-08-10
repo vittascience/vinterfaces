@@ -84,7 +84,6 @@ class ControllerProject extends Controller
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
                 $projectSharedStatus = $project->getSharedStatus();
-                $projectLink = $project->getSharedLink();
                 $userChanged = [false, null, null];
 
 
@@ -124,11 +123,11 @@ class ControllerProject extends Controller
                     $project->setSharedUsers(serialize($unserializedSharedUsers));
                 }
 
-                if ($requesterLink == $projectLink) {
-                    if ($projectSharedStatus == 2) {
-                        $canUpdateProject = true;
-                    }
+
+                if ($projectSharedStatus == 2) {
+                    $canUpdateProject = true;
                 }
+
 
                 if ($canUpdateProject || $projectSharedStatus) {
                     $project->setDateUpdated();
@@ -468,7 +467,7 @@ class ControllerProject extends Controller
 
                 return array('success' => true);
             },
-            'get_shared_link_for_project' => function () {
+/*             'get_shared_link_for_project' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
@@ -502,7 +501,7 @@ class ControllerProject extends Controller
                 }
 
                 return ['success' => true, 'shared_link' => $sharedLink];
-            },
+            }, */
 /*             'add_shared_user_from_link' => function() {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];

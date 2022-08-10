@@ -130,13 +130,6 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
 
 
     /**
-     * @ORM\Column(name="shared_link", type="string", length=255, nullable=true)
-     *
-     * @var string
-     */
-    private $sharedLink;
-
-    /**
      * Project constructor
      * @param string $name
      * @param string $description
@@ -529,30 +522,6 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     public function setSharedStatus($sharedStatus)
     {
         $this->sharedStatus = $sharedStatus;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of shared link
-     *
-     * @return  string
-     */
-    public function getSharedLink()
-    {
-        return $this->sharedLink;
-    }
-
-    /**
-     * Set the value of shared link
-     *
-     * @param  string  $sharedLink
-     *
-     * @return  self
-     */
-    public function setSharedLink($sharedLink)
-    {
-        $this->sharedLink = $sharedLink;
 
         return $this;
     }
