@@ -100,7 +100,7 @@ class ControllerProject extends Controller
                     if ($unserializedSharedUsers) {
                         foreach ($unserializedSharedUsers as $sharedUser) {
                             if ($sharedUser['userId'] == $requesterId) {
-                                if ($sharedUser['right'] == 'writting') {
+                                if ($sharedUser['right'] == 2) {
                                     $canUpdateProject = true;
                                     break;
                                 }
@@ -432,7 +432,7 @@ class ControllerProject extends Controller
                 }
 
                 // Format of the shared users array:
-                // [[userId: 1, right: "reading"], [userId: 2, right: "writting"]]...
+                // [[userId: 1, right: 1], [userId: 2, right: 2]]...
                 // check if the user is already shared with the project
                 $sharedUserAlreadyShared = false;
                 foreach ($unserializedSharedUsers as $sharedUser) {
@@ -711,7 +711,7 @@ class ControllerProject extends Controller
                 }
                 // some errors found, return them
                 if (!empty($errors)) return array('errors' => $errors);
-                
+
                 // no errors, get the user and project from interfaces_projects
                 $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
                 if (!$projectExists) {
