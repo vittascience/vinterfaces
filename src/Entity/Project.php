@@ -130,7 +130,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
 
 
     /**
-     * @ORM\Column(name="shared_link", type="text", nullable=true)
+     * @ORM\Column(name="shared_link", type="string", length=255, nullable=true)
      *
      * @var string
      */
