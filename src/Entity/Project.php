@@ -122,7 +122,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $sharedUsers;
 
     /**
-     * @ORM\Column(name="shared_link_rights", type="boolean", nullable=true, options={"default":false})
+     * @ORM\Column(name="shared_link_rights", type="integer", nullable=false, options={"default":0})
      *
      * @var string
      */
@@ -130,11 +130,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
 
 
     /**
-     * @ORM\Column(name="shared_links", type="text", nullable=true)
+     * @ORM\Column(name="shared_link", type="text", nullable=true)
      *
      * @var string
      */
-    private $sharedLinks;
+    private $sharedLink;
 
     /**
      * Project constructor
@@ -512,7 +512,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * Get the value of shared link rights
      *
-     * @return  string
+     * @return  int
      */
     public function getSharedStatus()
     {
@@ -522,7 +522,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * Set the value of shared link rights
      *
-     * @param  string  $sharedStatus
+     * @param  int  $sharedStatus
      *
      * @return  self
      */
@@ -538,9 +538,9 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      *
      * @return  string
      */
-    public function getSharedLinks()
+    public function getSharedLink()
     {
-        return $this->sharedLinks;
+        return $this->sharedLink;
     }
 
     /**
@@ -550,9 +550,9 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      *
      * @return  self
      */
-    public function setSharedLinks($sharedLinks)
+    public function setSharedLink($sharedLink)
     {
-        $this->sharedLinks = $sharedLinks;
+        $this->sharedLink = $sharedLink;
 
         return $this;
     }

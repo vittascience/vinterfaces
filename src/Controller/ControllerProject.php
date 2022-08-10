@@ -77,10 +77,14 @@ class ControllerProject extends Controller
 
                 $projectJSON = json_decode($data['project']);
                 $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
+                $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
                 $projectSharedStatus = $project->getSharedStatus();
+                $projectLink = $project->getSharedLink();
+
+
 
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
@@ -102,6 +106,12 @@ class ControllerProject extends Controller
                                 }
                             }
                         }
+                    }
+                }
+
+                if ($requesterLink == $projectLink) {
+                    if ($projectSharedStatus == 2) {
+                        $canUpdateProject = true;
                     }
                 }
 
@@ -468,17 +478,17 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
-                if (!$projectExists->getSharedLinks()) {
-                    $sharedLinks = ["writting" => md5(uniqid()), "reading" => md5(uniqid())];
-                    $projectExists->setSharedLinks(serialize($sharedLinks));
+                if (!$projectExists->getSharedLink()) {
+                    $sharedLink = md5(uniqid());
+                    $projectExists->setSharedLink($sharedLink);
                     $this->entityManager->flush();
                 } else {
-                    $sharedLinks = @unserialize($projectExists->getSharedLinks());
+                    $sharedLink = $projectExists->getSharedLink();
                 }
 
-                return ['success' => true, 'shared_links' => $sharedLinks];
+                return ['success' => true, 'shared_link' => $sharedLink];
             },
-            'add_shared_user_from_link' => function() {
+/*             'add_shared_user_from_link' => function() {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
@@ -504,22 +514,15 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
-                $sharedLinks = @unserialize($projectExists->getSharedLinks());
-                if (!$sharedLinks) {
+                $sharedLink = $projectExists->getSharedLinks();
+                if (!$sharedLink) {
                     array_push($errors, array('errorType' => 'sharedLinkInvalid'));
                     return array('errors' => $errors);
                 }
 
                 $right = null;
-                foreach ($sharedLinks as $sharedLink) {
-                    if ($sharedLink["writting"] == $link) {
-                        $right = "writting";
-                    } else if ($sharedLink["reading"] == $link) {
-                        $right = "reading";
-                    } else {
-                        array_push($errors, array('errorType' => 'sharedLinkInvalid'));
-                        return  ['errors' => $errors];
-                    }
+                if ($sharedLink == $link) {
+                    $right = $projectExists->getSharedStatus();
                 }
 
                 if (!$right) {
@@ -549,7 +552,7 @@ class ControllerProject extends Controller
 
                 return ['success' => true];
 
-            },
+            } */
             'delete_shared_user' => function() {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -664,8 +667,9 @@ class ControllerProject extends Controller
                 if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
                 // bind and sanitize data
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $sharedStatus = !empty($_POST['shared_status']) ? boolval($_POST['shared_status']) : null;
+                $sharedStatus = !empty($_POST['shared_status']) ? intval($_POST['shared_status']) : null;
                 
+                $statusArray = [0, 1, 2];
                 // check for errors
                 $errors = [];
                 if (empty($projectId)) {
@@ -686,9 +690,35 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
-                $projectExists->setSharedLinkRights($sharedStatus);
+                if (!in_array($sharedStatus, $statusArray)) {
+                    array_push($errors, array('errorType' => 'sharedStatusInvalid'));
+                    return array('errors' => $errors);
+                }
+
+                $projectExists->setSharedStatus($sharedStatus);
                 $this->entityManager->flush();
                 return ['success' => true];
+            },
+            "get_shared_status" => function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+                
+                // no errors, get the user and project from interfaces_projects
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+                return ['success' => true, 'sharedStatus' => $projectExists->getSharedStatus()];
             }
         );
     }
