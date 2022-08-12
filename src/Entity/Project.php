@@ -122,7 +122,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $sharedUsers;
 
     /**
-     * @ORM\Column(name="shared_link_rights", type="integer", nullable=false, options={"default":0})
+     * @ORM\Column(name="shared_status", type="integer", nullable=false, options={"default":0})
      *
      * @var string
      */
