@@ -529,7 +529,8 @@ class ControllerProject extends Controller
                 if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
                 // bind and sanitize data
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $sharedUsers = !empty($_POST['shared_users_id']) ? json_decode($_POST['shared_users_id']) : null;
+                $sharedUsersId = !empty($_POST['shared_users_id']) ? htmlspecialchars(strip_tags(trim($_POST['shared_users_id']))) : null;
+                $sharedUsersRight = !empty($_POST['shared_users_right']) ? intval($_POST['shared_users_right']) : null;
 
                 // check for errors
                 $errors = [];
@@ -538,6 +539,10 @@ class ControllerProject extends Controller
                 }
                 if (empty($sharedUsers)) {
                     array_push($errors, array('errorType' => 'sharedUsersInvalid'));
+                }
+
+                if ($sharedUsersRight < 1 || $sharedUsersRight > 3) {
+                    array_push($errors, array('errorType' => 'sharedUsersRightInvalid'));
                 }
 
                 // some errors found, return them
@@ -563,10 +568,8 @@ class ControllerProject extends Controller
                 }
 
                 foreach ($unserializedSharedUsers as $user) {
-                    foreach ($sharedUsers as $sharedUser) {
-                        if ($user['userId'] == $sharedUser[0]) {
-                            $unserializedSharedUsers[$user['userId']]['right'] = $sharedUser[1];
-                        }
+                    if ($user['userId'] == $sharedUsersId) {
+                        $unserializedSharedUsers[$user['userId']]['right'] = $sharedUsersRight;
                     }
                 }
 
