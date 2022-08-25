@@ -5,12 +5,12 @@ namespace Interfaces\Controller;
 use User\Entity\User;
 use User\Entity\Regular;
 use Interfaces\Entity\Project;
-use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\LtiProject;
+/* use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\ExercisePython;
 use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
-use Interfaces\Entity\ExercisePythonFrames;
+use Interfaces\Entity\ExercisePythonFrames; */
 
 class ControllerProject extends Controller
 {
@@ -75,18 +75,20 @@ class ControllerProject extends Controller
                 /**
                  * RTC update
                  */
-
-                $projectJSON = json_decode($data['project']);
-                $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
+                
+                $projectJSON = json_decode($_POST['project']);
+                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
                 $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
+                if (empty($requesterLink)) return ["errorType" => "no requester link"];
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
-                $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["id" => $requesterId]);
+                if($requesterId != null){
+                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                }
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
                 $projectSharedStatus = $project->getSharedStatus();
                 $userChanged = [false, null, null];
-
-
+                
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
@@ -117,17 +119,14 @@ class ControllerProject extends Controller
                     }
                 }
 
-
                 if ($userChanged[0]) {
                     $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
                     $project->setSharedUsers(serialize($unserializedSharedUsers));
                 }
 
-
                 if ($projectSharedStatus == 2) {
                     $canUpdateProject = true;
                 }
-
 
                 if ($canUpdateProject || $projectSharedStatus) {
                     $project->setDateUpdated();
@@ -139,7 +138,6 @@ class ControllerProject extends Controller
                     $project->setPublic($projectJSON->public);
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
-
                     return $project;
                 } else {
                     return ['status' => false, 'message' => "Vous n'avez pas le droit de modifier ce programme"];
