@@ -455,10 +455,15 @@ class ControllerProject extends Controller
                 }
 
                 // if the user is not already shared, add it to the shared users array
+                $newSharedUser = $this->entityManager->getRepository(User::class)->find($sharedUserId);
                 if (!$sharedUserAlreadyShared) {
-                    array_push($unserializedSharedUsers, ['userId' => $sharedUserId, 'right' => $sharedRight]);
+                    if ($newSharedUser) {
+                        $fullname = $newSharedUser->getFirstname() . ' ' . $newSharedUser->getLastname();
+                    } else {
+                        $fullname = $sharedUserId;
+                    }
+                    array_push($unserializedSharedUsers, ['userId' => $sharedUserId, 'right' => $sharedRight, 'name' => $fullname]);
                 }
-
                 // update the shared users array in the project
                 $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
                 $this->entityManager->flush();
