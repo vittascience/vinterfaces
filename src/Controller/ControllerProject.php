@@ -3,13 +3,16 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
-use Interfaces\Entity\UnitTests;
+use GuzzleHttp\Client;
 use Interfaces\Entity\Project;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
+use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\LtiProject;
 use Interfaces\Entity\ExercisePython;
-use Interfaces\Entity\ExercisePythonFrames;
 use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
+use Interfaces\Entity\ExercisePythonFrames;
 
 class ControllerProject extends Controller
 {
@@ -108,10 +111,15 @@ class ControllerProject extends Controller
             'duplicate' => function ($data) {
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $data['link']));
+                $currentCode = $project->getCode();
+                // For ai project we need to duplicate the related assets
+                if ($project->getInterface() == 'ai') {
+                    $currentCode = $this->getCodeFromAiInterface($project);
+                }
                 $projectBis = new Project($project->getName(), $project->getDescription());
                 $projectBis->setUser($project->getUser());
                 $projectBis->setDateUpdated();
-                $projectBis->setCode($project->getCode());
+                $projectBis->setCode($currentCode);
                 $projectBis->setCodeText($project->getCodeText());
                 $projectBis->setCodeManuallyModified($project->isCManuallyModified());
                 $projectBis->setPublic($project->isPublic());
@@ -349,6 +357,60 @@ class ControllerProject extends Controller
                 return array('success' => true);
             }
         );
+    }
+
+    private function getCodeFromAiInterface($project){
+        $projectCode = json_decode($project->getCode());
+        $arrayKeys = [];
+        $trainingDataKeys = $projectCode->trainingDataKeys;
+        $fileKeys = $projectCode->fileKeys;
+        if (!empty($trainingDataKeys)) {
+            array_push($arrayKeys, $trainingDataKeys);
+        }
+        if (!empty($fileKeys)) {
+            array_push($arrayKeys, $fileKeys);
+        }
+        if (!empty($arrayKeys)) {
+            $sessionId = session_id();
+            session_write_close();                        
+            $cookie = new SetCookie();
+            $cookie->setName('PHPSESSID');
+            $cookie->setValue($sessionId);
+            $cookie->setDomain($_SERVER["HTTP_HOST"]);                        
+            $cookieJar = new CookieJar(
+                false,
+                array(
+                    $cookie
+                )
+            );                        
+            $client = new Client();
+            $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') ? 'https' : 'http';
+            $response = $client->request('POST', "$scheme://{$_SERVER["HTTP_HOST"]}/routing/Routing.php?controller=cloud&action=duplicate-assets", [
+                    'form_params' => [
+                    'keys' => $arrayKeys
+                ],
+                'cookies' => $cookieJar
+            ]);
+            session_start();
+            $decodedResponse = json_decode($response->getBody()->getContents());
+            if ($decodedResponse->success == true) {
+                if (is_array($decodedResponse->assets) && count($decodedResponse->assets) > 0) {
+                    $newKey = explode('-', $decodedResponse->assets[0]->to)[0];
+                    if (!empty($trainingDataKeys)) {
+                        $projectCode->trainingDataKeys = $newKey;
+                    }
+                    if (!empty($fileKeys)) {
+                        $projectCode->fileKeys = $newKey;
+                        $projectCode->fileKeysOwner = $_SESSION['id'];
+                    }
+                    $currentCode = json_encode($projectCode);
+                    return $currentCode;
+                }
+            }
+        }
+
+        // $arrayKeys is empty
+        return null;
     }
 
     /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
