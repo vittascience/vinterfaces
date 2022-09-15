@@ -108,21 +108,46 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $toReturn;
             },
-            'duplicate' => function ($data) {
+            'duplicate' => function () {
+
+                /**
+                 * This method when the user click on the save or modify exercice button 
+                 * in order to save the exercise frames
+                 */
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+                $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                $name = !empty($_POST['name']) ? htmlspecialchars(strip_tags(trim($_POST['name']))) : '';
+                $description = !empty($_POST['description']) ? htmlspecialchars(strip_tags(trim($_POST['description']))) : '';
+                $isPublic = !empty($_POST['isPublic']) ? boolval($_POST['isPublic']) : false;
+
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->findOneBy(array("link" => $data['link']));
+                    ->findOneBy(array("link" => $projectLink));
+
                 $currentCode = $project->getCode();
                 // For ai project we need to duplicate the related assets
                 if ($project->getInterface() == 'ai') {
                     $currentCode = $this->getCodeFromAiInterface($project);
                 }
-                $projectBis = new Project($project->getName(), $project->getDescription());
-                $projectBis->setUser($project->getUser());
-                $projectBis->setDateUpdated();
+                $projectName = $name ?? $project->getName();
+                $projectDescription = $description ?? $project->getDescription();
+                $projectIsPublic = $isPublic ;
+                
+
+                $projectBis = new Project($projectName, $projectDescription);
+                $projectBis->setPublic($projectIsPublic);
                 $projectBis->setCode($currentCode);
+
+                $projectBis->setUser($user);
+                $projectBis->setDateUpdated();
                 $projectBis->setCodeText($project->getCodeText());
                 $projectBis->setCodeManuallyModified($project->isCManuallyModified());
-                $projectBis->setPublic($project->isPublic());
                 $projectBis->setLink(uniqid());
                 $projectBis->setInterface($project->getInterface());
                 $this->entityManager->persist($projectBis);
