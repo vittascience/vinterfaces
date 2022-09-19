@@ -409,7 +409,11 @@ class ControllerProject extends Controller
                 )
             );                        
             $client = new Client();
-            $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') ? 'https' : 'http';
+            
+            // work around to detect https scheme (http for local else https prod and test servers)
+            $parts = explode('.',$_SERVER['HTTP_HOST']);
+            $scheme = count($parts) > 1 ? 'https' : 'http';
+
             $response = $client->request('POST', "$scheme://{$_SERVER["HTTP_HOST"]}/routing/Routing.php?controller=cloud&action=duplicate-assets", [
                     'form_params' => [
                     'keys' => $arrayKeys
