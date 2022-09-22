@@ -126,7 +126,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      *
      * @var string
      */
-    private $sharedStatus;
+    private $sharedStatus = 0;
 
 
     /**
