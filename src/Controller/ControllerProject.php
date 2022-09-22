@@ -3,16 +3,19 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
+use User\Entity\Regular;
 use GuzzleHttp\Client;
 use Interfaces\Entity\Project;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
-use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\LtiProject;
+
+// @ToBeRemoved last check 22/09/2022 reason: entities used in exercise side instead of project side
+/* use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\ExercisePython;
 use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
-use Interfaces\Entity\ExercisePythonFrames;
+use Interfaces\Entity\ExercisePythonFrames; */
 
 class ControllerProject extends Controller
 {
@@ -65,6 +68,7 @@ class ControllerProject extends Controller
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
                 $project->setInterface($data['interface']);
+                $project->setSharedStatus($data['sharedStatus']);
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
                 }
@@ -73,10 +77,64 @@ class ControllerProject extends Controller
                 return $project; //synchronized
             },
             'update_my_project' => function ($data) {
-                $projectJSON = json_decode($data['project']);
-                if ($this->user['id'] == $projectJSON->user->id) {
-                    $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
-                        ->findOneBy(array("link" => $projectJSON->link));
+
+                /**
+                 * RTC update
+                 */
+                
+                $projectJSON = json_decode($_POST['project']);
+                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
+                $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
+                if (empty($requesterLink)) return ["errorType" => "no requester link"];
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
+                if($requesterId != null){
+                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                }
+                $projectOwner = $project->getUser();
+                $projectSharedUsers = $project->getSharedUsers();
+                $projectSharedStatus = $project->getSharedStatus();
+                $userChanged = [false, null, null];
+                
+                if ($projectSharedUsers) {
+                    $unserializedSharedUsers = @unserialize($projectSharedUsers);
+                    if (!$unserializedSharedUsers) {
+                        $unserializedSharedUsers = [];
+                    }
+                }
+
+                $canUpdateProject = false;
+                if ($projectOwner->getId() == $requesterId) {
+                    $canUpdateProject = true;
+                } else {
+                    if ($unserializedSharedUsers) {
+                        foreach ($unserializedSharedUsers as $key => $sharedUser) {
+                            if ($sharedUser['userId'] == $requesterId) {
+                                if ($sharedUser['right'] == 2) {
+                                    $canUpdateProject = true;
+                                    break;
+                                }
+                            } else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
+                                if ($sharedUser['right'] == 2) {
+                                    $sharedUser['userId'] = $requesterRegular->getUser()->getId();
+                                    $canUpdateProject = true;
+                                    $userChanged = [true, $key, $sharedUser['userId']];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($userChanged[0]) {
+                    $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
+                    $project->setSharedUsers(serialize($unserializedSharedUsers));
+                }
+
+                if ($projectSharedStatus == 2) {
+                    $canUpdateProject = true;
+                }
+
+                if ($canUpdateProject || $projectSharedStatus) {
                     $project->setDateUpdated();
                     $project->setCode($projectJSON->code);
                     $project->setName($projectJSON->name);
@@ -86,7 +144,6 @@ class ControllerProject extends Controller
                     $project->setPublic($projectJSON->public);
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
-
                     return $project;
                 } else {
                     return ['status' => false, 'message' => "Vous n'avez pas le droit de modifier ce programme"];
@@ -380,6 +437,284 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
 
                 return array('success' => true);
+            },
+            // RTC UPDATE
+            'add_shared_user_to_my_project' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $sharedUserId = !empty($_POST['shared_user_id']) ? $_POST['shared_user_id'] : null;
+                $sharedRight = !empty($_POST['shared_right']) ? $_POST['shared_right'] : null;
+
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                if (empty($sharedUserId)) {
+                    array_push($errors, array('errorType' => 'sharedUserIdInvalid'));
+                }
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get the user and project from interfaces_projects
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $actualSharedUser = $projectExists->getSharedUsers();
+                if ($actualSharedUser) {
+                    $unserializedSharedUsers = @unserialize($actualSharedUser);
+                    if (!$unserializedSharedUsers) {
+                        $unserializedSharedUsers = [];
+                    }
+                }
+
+                // Format of the shared users array:
+                // [[userId: 1, right: 1], [userId: 2, right: 2]]...
+                // check if the user is already shared with the project
+                $sharedUserAlreadyShared = false;
+                foreach ($unserializedSharedUsers as $sharedUser) {
+                    if ($sharedUser['userId'] == $sharedUserId) {
+                        $sharedUserAlreadyShared = true;
+                        break;
+                    }
+                }
+
+                // if the user is not already shared, add it to the shared users array
+                $newSharedUser = $this->entityManager->getRepository(User::class)->find($sharedUserId);
+                if (!$sharedUserAlreadyShared) {
+                    if ($newSharedUser) {
+                        $fullname = $newSharedUser->getFirstname() . ' ' . $newSharedUser->getLastname();
+                    } else {
+                        $fullname = $sharedUserId;
+                    }
+                    array_push($unserializedSharedUsers, ['userId' => $sharedUserId, 'right' => $sharedRight, 'name' => $fullname]);
+                }
+                // update the shared users array in the project
+                $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
+                $this->entityManager->flush();
+
+                return array('success' => true);
+            },
+            'delete_shared_user' => function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $sharedUsersId = !empty($_POST['shared_user_id']) ? json_decode($_POST['shared_user_id']) : null;
+
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                if (empty($sharedUsersId)) {
+                    array_push($errors, array('errorType' => 'sharedUsersIdInvalid'));
+                }
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+                // no errors, get the user and project from interfaces_projects
+
+
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $sharedUsers = $projectExists->getSharedUsers();
+
+                if (!$sharedUsers) {
+                    array_push($errors, array('errorType' => 'sharedUsersNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $unserializedSharedUsers = @unserialize($sharedUsers);
+                if (!$unserializedSharedUsers) {
+                    array_push($errors, array('errorType' => 'sharedUsersNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                foreach ($unserializedSharedUsers as $user) {
+                    if (in_array($user['userId'], $sharedUsersId)) {
+                        unset($unserializedSharedUsers[$user['userId']]);
+                    }
+                }
+
+                $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
+                $this->entityManager->flush();
+
+                return ['success' => true];
+            },
+            'update_shared_users_right' => function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $sharedUsersId = !empty($_POST['shared_users_id']) ? htmlspecialchars(strip_tags(trim($_POST['shared_users_id']))) : null;
+                $sharedUsersRight = !empty($_POST['shared_users_right']) ? intval($_POST['shared_users_right']) : null;
+
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                /* if (empty($sharedUsers)) {
+                    array_push($errors, array('errorType' => 'sharedUsersInvalid'));
+                } */
+
+                if ($sharedUsersRight < 1 || $sharedUsersRight > 3) {
+                    array_push($errors, array('errorType' => 'sharedUsersRightInvalid'));
+                }
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+                // no errors, get the user and project from interfaces_projects
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $sharedUsers = $projectExists->getSharedUsers();
+                if (!$sharedUsers) {
+                    array_push($errors, array('errorType' => 'sharedUsersNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $unserializedSharedUsers = @unserialize($sharedUsers);
+                if (!$unserializedSharedUsers) {
+                    array_push($errors, array('errorType' => 'sharedUsersNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                foreach ($unserializedSharedUsers as $key => $user) {
+                    if ($user['userId'] == $sharedUsersId) {
+                        $unserializedSharedUsers[$key]['right'] = $sharedUsersRight;
+                    }
+                }
+
+                $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
+                $this->entityManager->flush();
+                return ['success' => true];
+            },
+            'update_shared_status_for_project' => function() {
+                // accept only POST request
+                $statusArray = [0, 1, 2];
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $sharedStatus = in_array(intval($_POST['shared_status']), $statusArray) ? intval($_POST['shared_status']) : null;
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                /* if (empty($sharedStatus)) {
+                    array_push($errors, array('errorType' => 'sharedStatusInvalid'));
+                } */
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+                // no errors, get the user and project from interfaces_projects
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                if (!in_array($sharedStatus, $statusArray)) {
+                    array_push($errors, array('errorType' => 'sharedStatusInvalid'));
+                    return array('errors' => $errors);
+                }
+
+                $projectExists->setSharedStatus($sharedStatus);
+                $this->entityManager->flush();
+                return ['success' => true];
+            },
+            "get_shared_status" => function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get the user and project from interfaces_projects
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+                return ['success' => true, 'sharedStatus' => $projectExists->getSharedStatus()];
+            },
+            'update_shared_users_id' => function ($data) {
+
+                $projectJSON = json_decode($_POST['project']);
+                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
+                if($requesterId != null){
+                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                }
+                $projectSharedUsers = $project->getSharedUsers();
+                $userChanged = [false, null, null];
+                
+                if ($projectSharedUsers) {
+                    $unserializedSharedUsers = @unserialize($projectSharedUsers);
+                    if (!$unserializedSharedUsers) {
+                        $unserializedSharedUsers = [];
+                    }
+                }
+                if ($unserializedSharedUsers) {
+                    foreach ($unserializedSharedUsers as $key => $sharedUser) {
+                        if ($requesterRegular->getEmail() == $sharedUser['userId']) {
+                            $sharedUser['userId'] = $requesterRegular->getUser()->getId();
+                            $userChanged = [true, $key, $sharedUser['userId']];
+                            break;
+                        }
+                    }
+                    
+                }
+            
+                if ($userChanged[0]) {
+                    $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
+                    $project->setSharedUsers(serialize($unserializedSharedUsers));
+                }
+            
+                if ($userChanged[0]) {
+                    $this->entityManager->persist($project);
+                    $this->entityManager->flush();
+                    return $project;
+                } else {
+                    return ['status' => false, 'message' => "User déjà à jour"];
+                }
             }
         );
     }
@@ -566,4 +901,104 @@ class ControllerProject extends Controller
              return false;
          }
      } */
+     /*             'get_shared_link_for_project' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+                // bind and sanitize data
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+                // no errors, get the user and project from interfaces_projects
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                if (!$projectExists->getSharedLink()) {
+                    $sharedLink = md5(uniqid());
+                    $projectExists->setSharedLink($sharedLink);
+                    $this->entityManager->flush();
+                } else {
+                    $sharedLink = $projectExists->getSharedLink();
+                }
+
+                return ['success' => true, 'shared_link' => $sharedLink];
+            }, */
+/*             'add_shared_user_from_link' => function() {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+                // bind and sanitize data
+
+                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
+                $link = !empty($_POST['shared_link']) ? $_POST['shared_link'] : null;
+
+                // check for errors
+                $errors = [];
+                if (empty($projectId)) {
+                    array_push($errors, array('errorType' => 'projectIdInvalid'));
+                }
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get the user and project from interfaces_projects
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
+                if (!$projectExists) {
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                $sharedLink = $projectExists->getSharedLinks();
+                if (!$sharedLink) {
+                    array_push($errors, array('errorType' => 'sharedLinkInvalid'));
+                    return array('errors' => $errors);
+                }
+
+                $right = null;
+                if ($sharedLink == $link) {
+                    $right = $projectExists->getSharedStatus();
+                }
+
+                if (!$right) {
+                    array_push($errors, array('errorType' => 'sharedLinkInvalid'));
+                    return  ['errors' => $errors];
+                }
+
+                $sharedUsers = $projectExists->getSharedUsers();
+                if ($sharedUsers) {
+                    $unserializedSharedUsers = @unserialize($sharedUsers);
+                    if (!$unserializedSharedUsers) {
+                        $unserializedSharedUsers = [];
+                    }
+                } else {
+                    $unserializedSharedUsers = [];
+                }
+
+                foreach ($sharedUsers as $user) {
+                    if ($user['userId'] == $_SESSION['id']) {
+                        array_push($errors, array('errorType' => 'userAlreadyShared'));
+                        return  ['errors' => $errors];
+                    }
+                }
+                array_push($unserializedSharedUsers, ['userId' => $_SESSION['id'], 'right' => $right]);
+                $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
+                $this->entityManager->flush();
+
+                return ['success' => true];
+
+            } */
 }
