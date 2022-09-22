@@ -4,8 +4,13 @@ namespace Interfaces\Controller;
 
 use User\Entity\User;
 use User\Entity\Regular;
+use GuzzleHttp\Client;
 use Interfaces\Entity\Project;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
 use Interfaces\Entity\LtiProject;
+
+// @ToBeRemoved last check 22/09/2022 reason: entities used in exercise side instead of project side
 /* use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\ExercisePython;
 use Interfaces\Entity\UnitTestsInputs;
@@ -160,16 +165,46 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $toReturn;
             },
-            'duplicate' => function ($data) {
+            'duplicate' => function () {
+
+                /**
+                 * This method when the user click on the save or modify exercice button 
+                 * in order to save the exercise frames
+                 */
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+                $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                $name = !empty($_POST['name']) ? htmlspecialchars(strip_tags(trim($_POST['name']))) : '';
+                $description = !empty($_POST['description']) ? htmlspecialchars(strip_tags(trim($_POST['description']))) : '';
+                $isPublic = $_POST['isPublic'] == 'true' ? true : false;
+
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->findOneBy(array("link" => $data['link']));
-                $projectBis = new Project($project->getName(), $project->getDescription());
-                $projectBis->setUser($project->getUser());
+                    ->findOneBy(array("link" => $projectLink));
+
+                $currentCode = $project->getCode();
+                // For ai project we need to duplicate the related assets
+                if ($project->getInterface() == 'ai') {
+                    $currentCode = $this->getCodeFromAiInterface($project);
+                }
+                $projectName = $name ?? $project->getName();
+                $projectDescription = $description ?? $project->getDescription();
+                $projectIsPublic = $isPublic ;
+                
+
+                $projectBis = new Project($projectName, $projectDescription);
+                $projectBis->setPublic($projectIsPublic);
+                $projectBis->setCode($currentCode);
+
+                $projectBis->setUser($user);
                 $projectBis->setDateUpdated();
-                $projectBis->setCode($project->getCode());
                 $projectBis->setCodeText($project->getCodeText());
                 $projectBis->setCodeManuallyModified($project->isCManuallyModified());
-                $projectBis->setPublic($project->isPublic());
                 $projectBis->setLink(uniqid());
                 $projectBis->setInterface($project->getInterface());
                 $this->entityManager->persist($projectBis);
@@ -682,6 +717,64 @@ class ControllerProject extends Controller
                 }
             }
         );
+    }
+
+    private function getCodeFromAiInterface($project){
+        $projectCode = json_decode($project->getCode());
+        $arrayKeys = [];
+        $trainingDataKeys = $projectCode->trainingDataKeys;
+        $fileKeys = $projectCode->fileKeys;
+        if (!empty($trainingDataKeys)) {
+            array_push($arrayKeys, $trainingDataKeys);
+        }
+        if (!empty($fileKeys)) {
+            array_push($arrayKeys, $fileKeys);
+        }
+        if (!empty($arrayKeys)) {
+            $sessionId = session_id();
+            session_write_close();                        
+            $cookie = new SetCookie();
+            $cookie->setName('PHPSESSID');
+            $cookie->setValue($sessionId);
+            $cookie->setDomain($_SERVER["HTTP_HOST"]);                        
+            $cookieJar = new CookieJar(
+                false,
+                array(
+                    $cookie
+                )
+            );                        
+            $client = new Client();
+            
+            // work around to detect https scheme (http for local else https prod and test servers)
+            $parts = explode('.',$_SERVER['HTTP_HOST']);
+            $scheme = count($parts) > 1 ? 'https' : 'http';
+
+            $response = $client->request('POST', "$scheme://{$_SERVER["HTTP_HOST"]}/routing/Routing.php?controller=cloud&action=duplicate-assets", [
+                    'form_params' => [
+                    'keys' => $arrayKeys
+                ],
+                'cookies' => $cookieJar
+            ]);
+            session_start();
+            $decodedResponse = json_decode($response->getBody()->getContents());
+            if ($decodedResponse->success == true) {
+                if (is_array($decodedResponse->assets) && count($decodedResponse->assets) > 0) {
+                    $newKey = explode('-', $decodedResponse->assets[0]->to)[0];
+                    if (!empty($trainingDataKeys)) {
+                        $projectCode->trainingDataKeys = $newKey;
+                    }
+                    if (!empty($fileKeys)) {
+                        $projectCode->fileKeys = $newKey;
+                        $projectCode->fileKeysOwner = $_SESSION['id'];
+                    }
+                    $currentCode = json_encode($projectCode);
+                    return $currentCode;
+                }
+            }
+        }
+
+        // $arrayKeys is empty
+        return null;
     }
 
     /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
