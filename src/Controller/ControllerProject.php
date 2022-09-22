@@ -124,7 +124,7 @@ class ControllerProject extends Controller
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
                 $name = !empty($_POST['name']) ? htmlspecialchars(strip_tags(trim($_POST['name']))) : '';
                 $description = !empty($_POST['description']) ? htmlspecialchars(strip_tags(trim($_POST['description']))) : '';
-                $isPublic = !empty($_POST['isPublic']) ? boolval($_POST['isPublic']) : false;
+                $isPublic = $_POST['isPublic'] == 'true' ? true : false;
 
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
