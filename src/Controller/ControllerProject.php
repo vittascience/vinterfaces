@@ -63,6 +63,7 @@ class ControllerProject extends Controller
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
                 $project->setInterface($data['interface']);
+                $project->setSharedStatus($data['sharedStatus']);
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
                 }
@@ -109,7 +110,7 @@ class ControllerProject extends Controller
                                 }
                             } else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
                                 if ($sharedUser['right'] == 2) {
-                                    $sharedUser['userId'] = $requesterRegular->getId();
+                                    $sharedUser['userId'] = $requesterRegular->getUser()->getId();
                                     $canUpdateProject = true;
                                     $userChanged = [true, $key, $sharedUser['userId']];
                                     break;
@@ -540,9 +541,9 @@ class ControllerProject extends Controller
                 if (empty($projectId)) {
                     array_push($errors, array('errorType' => 'projectIdInvalid'));
                 }
-                if (empty($sharedUsers)) {
+                /* if (empty($sharedUsers)) {
                     array_push($errors, array('errorType' => 'sharedUsersInvalid'));
-                }
+                } */
 
                 if ($sharedUsersRight < 1 || $sharedUsersRight > 3) {
                     array_push($errors, array('errorType' => 'sharedUsersRightInvalid'));
@@ -570,9 +571,9 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
-                foreach ($unserializedSharedUsers as $user) {
+                foreach ($unserializedSharedUsers as $key => $user) {
                     if ($user['userId'] == $sharedUsersId) {
-                        $unserializedSharedUsers[$user['userId']]['right'] = $sharedUsersRight;
+                        $unserializedSharedUsers[$key]['right'] = $sharedUsersRight;
                     }
                 }
 
@@ -582,22 +583,21 @@ class ControllerProject extends Controller
             },
             'update_shared_status_for_project' => function() {
                 // accept only POST request
+                $statusArray = [0, 1, 2];
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
                 // bind and sanitize data
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $sharedStatus = !empty($_POST['shared_status']) ? intval($_POST['shared_status']) : null;
-                
-                $statusArray = [0, 1, 2];
+                $sharedStatus = in_array(intval($_POST['shared_status']), $statusArray) ? intval($_POST['shared_status']) : null;
                 // check for errors
                 $errors = [];
                 if (empty($projectId)) {
                     array_push($errors, array('errorType' => 'projectIdInvalid'));
                 }
-                if (empty($sharedStatus)) {
+                /* if (empty($sharedStatus)) {
                     array_push($errors, array('errorType' => 'sharedStatusInvalid'));
-                }
+                } */
 
                 // some errors found, return them
                 if (!empty($errors)) return array('errors' => $errors);
@@ -639,6 +639,47 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
                 return ['success' => true, 'sharedStatus' => $projectExists->getSharedStatus()];
+            },
+            'update_shared_users_id' => function ($data) {
+
+                $projectJSON = json_decode($_POST['project']);
+                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
+                if($requesterId != null){
+                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                }
+                $projectSharedUsers = $project->getSharedUsers();
+                $userChanged = [false, null, null];
+                
+                if ($projectSharedUsers) {
+                    $unserializedSharedUsers = @unserialize($projectSharedUsers);
+                    if (!$unserializedSharedUsers) {
+                        $unserializedSharedUsers = [];
+                    }
+                }
+                if ($unserializedSharedUsers) {
+                    foreach ($unserializedSharedUsers as $key => $sharedUser) {
+                        if ($requesterRegular->getEmail() == $sharedUser['userId']) {
+                            $sharedUser['userId'] = $requesterRegular->getUser()->getId();
+                            $userChanged = [true, $key, $sharedUser['userId']];
+                            break;
+                        }
+                    }
+                    
+                }
+            
+                if ($userChanged[0]) {
+                    $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
+                    $project->setSharedUsers(serialize($unserializedSharedUsers));
+                }
+            
+                if ($userChanged[0]) {
+                    $this->entityManager->persist($project);
+                    $this->entityManager->flush();
+                    return $project;
+                } else {
+                    return ['status' => false, 'message' => "User déjà à jour"];
+                }
             }
         );
     }
