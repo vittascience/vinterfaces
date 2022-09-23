@@ -68,7 +68,7 @@ class ControllerProject extends Controller
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
                 $project->setInterface($data['interface']);
-                $project->setSharedStatus($data['sharedStatus']);
+                $project->setSharedStatus($data['sharedStatus'] ?? 0);
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
                 }
@@ -83,7 +83,7 @@ class ControllerProject extends Controller
                  */
                 
                 $projectJSON = json_decode($_POST['project']);
-                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
+                $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null;
                 $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
                 if (empty($requesterLink)) return ["errorType" => "no requester link"];
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
