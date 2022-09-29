@@ -9,6 +9,7 @@ use Interfaces\Entity\Project;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 use Interfaces\Entity\LtiProject;
+use Interfaces\Entity\ExerciseStatement;
 
 // @ToBeRemoved last check 22/09/2022 reason: entities used in exercise side instead of project side
 /* use Interfaces\Entity\UnitTests;
@@ -432,8 +433,23 @@ class ControllerProject extends Controller
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
                 }
+                
+                // update the exercise statement if already exists
+                if($projectExists->getExerciseStatement()){
+                    $projectExists->getExerciseStatement()
+                                    ->setStatementContent($exerciseStatement);
+                    $this->entityManager->flush();
+                    return array('success' => true);
+                }
 
-                $projectExists->setExerciseStatement($exerciseStatement);
+                // create exercise statement object
+                $exerciseStatementToSave = new ExerciseStatement;
+                $exerciseStatementToSave->setStatementContent($exerciseStatement);
+                
+                // update project with new exercise statement
+                $projectExists->setIsExerciseStatementCreator(true)
+                                ->setExerciseStatement($exerciseStatementToSave);
+                // $this->entityManager->persist($exerciseStatementToSave);
                 $this->entityManager->flush();
 
                 return array('success' => true);
