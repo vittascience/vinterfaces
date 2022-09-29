@@ -201,7 +201,7 @@ class ControllerProject extends Controller
                 $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
 
                 $projectDuplicated->setPublic($projectIsPublic);
-                // $projectBis->setCode($currentCode);
+                $projectDuplicated->setCode($currentCode);
 
                 // $projectBis->setUser($user);
                 // $projectBis->setDateUpdated();
