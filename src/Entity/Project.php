@@ -2,11 +2,12 @@
 
 namespace Interfaces\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
 use User\Entity\User;
+use Utils\MetaDataMatcher;
+use Doctrine\ORM\Mapping as ORM;
+use Interfaces\Entity\ExerciseStatement;
+use Utils\Exceptions\EntityOperatorException;
+use Utils\Exceptions\EntityDataIntegrityException;
 
 /**
  * @ORM\Entity(repositoryClass="Interfaces\Repository\ProjectRepository")
@@ -35,6 +36,12 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
      */
     private $exercise;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExerciseStatement", cascade={"persist","remove"})
+     * @ORM\JoinColumn(name="exercise_statement_id", referencedColumnName="id")
+     */
+    private $exerciseStatement;
 
     /**
      * @ORM\Column(name="project_name", type="string", length=100, nullable=false, options={"default":"Unamed"})
@@ -107,12 +114,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     private $isExerciseCreator = false;
 
     /**
-     * @ORM\Column(name="exercise_statement", type="text", nullable=true)
+     * @ORM\Column(name="is_exercise_statement_creator", type="boolean", nullable=false, options={"default":false})
      *
-     * @var string
+     * @var bool
      */
-    private $exerciseStatement;
-
+    private $isExerciseStatementCreator = false;
 
     /**
      * @ORM\Column(name="shared_users", type="text", nullable=true)
@@ -455,9 +461,63 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
     /**
+     * Get the value of isExerciseCreator
+     *
+     * @return  bool
+     */
+    public function getIsExerciseCreator()
+    {
+        return $this->isExerciseCreator;
+    }
+
+    /**
+     * Set the value of isExerciseCreator
+     *
+     * @param  bool  $isExerciseCreator
+     *
+     * @return  self
+     */
+    public function setIsExerciseCreator($isExerciseCreator)
+    {
+        if(!is_bool($isExerciseCreator)){
+            throw new EntityDataIntegrityException("The exercise creator property has to be a boolean value");
+        }
+
+        $this->isExerciseCreator = $isExerciseCreator;
+        return $this;
+    }
+
+    /**
+     * Get the value of isExerciseStatementCreator
+     *
+     * @return  bool
+     */ 
+    public function getIsExerciseStatementCreator()
+    {
+        return $this->isExerciseStatementCreator;
+    }
+
+    /**
+     * Set the value of isExerciseStatementCreator
+     *
+     * @param  bool  $isExerciseStatementCreator
+     *
+     * @return  self
+     */ 
+    public function setIsExerciseStatementCreator($isExerciseStatementCreator)
+    {
+        if(!is_bool($isExerciseStatementCreator)){
+            throw new EntityDataIntegrityException("The exercise statement creator property has to be a boolean value");
+        }
+
+        $this->isExerciseStatementCreator = $isExerciseStatementCreator;
+        return $this;
+    }
+
+    /**
      * Get the value of exerciseStatement
      *
-     * @return  string
+     * @return  
      */
     public function getExerciseStatement()
     {
@@ -467,14 +527,16 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * Set the value of exerciseStatement
      *
-     * @param  string  $exerciseStatement
+     * @param  ExerciseStatement  $exerciseStatement
      *
      * @return  self
      */
     public function setExerciseStatement($exerciseStatement)
     {
+        if(! ($exerciseStatement instanceof ExerciseStatement)){
+            throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class")
+        }
         $this->exerciseStatement = $exerciseStatement;
-
         return $this;
     }
 
@@ -604,27 +666,4 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $classInstance;
     }
 
-    /**
-     * Get the value of isExerciseCreator
-     *
-     * @return  bool
-     */
-    public function getIsExerciseCreator()
-    {
-        return $this->isExerciseCreator;
-    }
-
-    /**
-     * Set the value of isExerciseCreator
-     *
-     * @param  bool  $isExerciseCreator
-     *
-     * @return  self
-     */
-    public function setIsExerciseCreator($isExerciseCreator)
-    {
-        $this->isExerciseCreator = $isExerciseCreator;
-
-        return $this;
-    }
 }
