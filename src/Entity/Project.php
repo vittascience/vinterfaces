@@ -534,7 +534,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     public function setExerciseStatement($exerciseStatement)
     {
         if(! ($exerciseStatement instanceof ExerciseStatement)){
-            throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class")
+            throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class");
         }
         $this->exerciseStatement = $exerciseStatement;
         return $this;
