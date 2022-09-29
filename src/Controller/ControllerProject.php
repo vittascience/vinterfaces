@@ -3,8 +3,8 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
-use User\Entity\Regular;
 use GuzzleHttp\Client;
+use User\Entity\Regular;
 use Interfaces\Entity\Project;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
@@ -197,20 +197,21 @@ class ControllerProject extends Controller
                 $projectDescription = $description ?? $project->getDescription();
                 $projectIsPublic = $isPublic ;
                 
+                $newProject = new Project($projectName, $projectDescription);
+                $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
 
-                $projectBis = new Project($projectName, $projectDescription);
-                $projectBis->setPublic($projectIsPublic);
-                $projectBis->setCode($currentCode);
+                $projectDuplicated->setPublic($projectIsPublic);
+                // $projectBis->setCode($currentCode);
 
-                $projectBis->setUser($user);
-                $projectBis->setDateUpdated();
-                $projectBis->setCodeText($project->getCodeText());
-                $projectBis->setCodeManuallyModified($project->isCManuallyModified());
-                $projectBis->setLink(uniqid());
-                $projectBis->setInterface($project->getInterface());
-                $this->entityManager->persist($projectBis);
+                // $projectBis->setUser($user);
+                // $projectBis->setDateUpdated();
+                // $projectBis->setCodeText($project->getCodeText());
+                // $projectBis->setCodeManuallyModified($project->isCManuallyModified());
+                // $projectBis->setLink(uniqid());
+                // $projectBis->setInterface($project->getInterface());
+                $this->entityManager->persist($projectDuplicated);
                 $this->entityManager->flush();
-                return $projectBis;
+                return $projectDuplicated;
             },
             'get_all_user_projects' => function ($data) {
                 // To change
@@ -301,20 +302,21 @@ class ControllerProject extends Controller
                 // no reference of this project in ltiProject ($user + $courseId + $ltiResourceId do not exists)
                 if (!$ltiProjectNotAlreadySubmitted) {
 
-                    // we duplicate the project for this user and save it
-                    $projectDuplicated = new Project(
+                    $newProject = new Project(
                         $project->getName(),
                         $project->getDescription()
                     );
+                    $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
+                    // // we duplicate the project for this user and save it
 
-                    $projectDuplicated->setUser($user);
-                    $projectDuplicated->setDateUpdated();
-                    $projectDuplicated->setCode($project->getCode());
-                    $projectDuplicated->setCodeText($project->getCodeText());
-                    $projectDuplicated->setCodeManuallyModified($project->isCManuallyModified());
-                    $projectDuplicated->setPublic($project->isPublic());
-                    $projectDuplicated->setLink(uniqid());
-                    $projectDuplicated->setInterface($project->getInterface());
+                    // $projectDuplicated->setUser($user);
+                    // $projectDuplicated->setDateUpdated();
+                    // $projectDuplicated->setCode($project->getCode());
+                    // $projectDuplicated->setCodeText($project->getCodeText());
+                    // $projectDuplicated->setCodeManuallyModified($project->isCManuallyModified());
+                    // $projectDuplicated->setPublic($project->isPublic());
+                    // $projectDuplicated->setLink(uniqid());
+                    // $projectDuplicated->setInterface($project->getInterface());
 
                     // set exercise 
                     if ($project->getExercise()) {
@@ -433,7 +435,7 @@ class ControllerProject extends Controller
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
                 }
-                
+
                 // update the exercise statement if already exists
                 if($projectExists->getExerciseStatement()){
                     $projectExists->getExerciseStatement()
@@ -793,6 +795,24 @@ class ControllerProject extends Controller
         return null;
     }
 
+    private function getDuplicatedProject($project, $user, $newProject){
+        // we duplicate the project for this user and save it
+        // $projectDuplicated = new Project(
+        //     $project->getName(),
+        //     $project->getDescription()
+        // );
+
+        $newProject->setUser($user);
+        $newProject->setDateUpdated();
+        $newProject->setCode($project->getCode());
+        $newProject->setCodeText($project->getCodeText());
+        $newProject->setCodeManuallyModified($project->isCManuallyModified());
+        $newProject->setPublic($project->isPublic());
+        $newProject->setLink(uniqid());
+        $newProject->setInterface($project->getInterface());
+
+        return $newProject;
+    }
     /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
         // get python exercice
          $pythonExerciseFound = $project->getExercise();
