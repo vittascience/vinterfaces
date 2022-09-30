@@ -15,10 +15,12 @@ class ControllerExercisePython extends Controller
         $this->actions = array(
             'get_by_project' => function ($data) {
                 $projectDeseralized = Project::jsonDeserialize($data['project']);
-                $projectSynchronized = $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->findOneBy(array("link" => $projectDeseralized->getLink()));
+                if($projectDeseralized->getLink()){
+                    $projectSynchronized = $this->entityManager->getRepository('Interfaces\Entity\Project')->findOneBy(array("link" => $projectDeseralized->getLink()));
                 
-                return $projectSynchronized->getExercise();
+                    return $projectSynchronized->getExercise();
+                }
+                return;
             },
             "update" => function () {
                
