@@ -260,13 +260,13 @@ class ControllerProject extends Controller
                 }
                 return false;
             },
-            'lti_teacher_duplicate_project' => function () {
+            'lti_duplicate_project_for_student' => function () {
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated"];
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
@@ -935,130 +935,8 @@ class ControllerProject extends Controller
             return false;
         }
     }
-    /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
-        // get python exercice
-         $pythonExerciseFound = $project->getExercise();
- 
-         if(!$pythonExerciseFound){
-             // no exercise for this project, return true to go back in main method
-             return true;
-         }
- 
+   
 
-
-         $this->entityManager->getConnection()->beginTransaction();
-         try{
-             
-             // we create and persist the exercise with the related project
-             $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
-             $duplicatedPythonExercise->setProject($projectDuplicated);
-             $this->entityManager->persist($duplicatedPythonExercise);          
- 
-             // get python test related to this exercise in python_tests table
-             $pythonTests = $this->entityManager
-                 ->getRepository(UnitTests::class)
-                 ->findByExercise($pythonExerciseFound);
- 
-             if(!$pythonTests) throw new \Exception("No python tests found");
-            
-             foreach($pythonTests as $pythonTest){
-                 // we create and save the python test with the related exercise
-                 $duplicatedPythonTest = new UnitTests();
-                 $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
-                 $duplicatedPythonTest->setHint($pythonTest->getHint());
-                 $this->entityManager->persist($duplicatedPythonTest);
- 
-                 // get unit tests inputs related to this unit test in python_tests_inputs
-                 $pythonTestInputs = $this->entityManager
-                     ->getRepository(UnitTestsInputs::class)
-                     ->findByUnitTest($pythonTest);
-                 
-                 // no data from db, go to the catch block
-                 if(!$pythonTestInputs) throw new \Exception("No python tests inputs found");
-                 
-                 // create new inputs copies for this user and persist them 
-                 foreach($pythonTestInputs as $pythonTestInput){
-                     $duplicatedTestInput = new UnitTestsInputs();
-                     $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
-                     $duplicatedTestInput->setValue($pythonTestInput->getValue());
-                     $this->entityManager->persist($duplicatedTestInput);
-                 }
-                 
-                 // get unit tests outputs related to this unit test in python_tests_outputs
-                 $pythonTestOutputs = $this->entityManager
-                     ->getRepository(UnitTestsOutputs::class)
-                     ->findByUnitTest($pythonTest);
-                 
-                 // no data from db, go to the catch block
-                 if(!$pythonTestOutputs) throw new \Exception("No python tests outputs found");
-                 
-                 // create new outputs copies for this user and persist them
-                 foreach($pythonTestOutputs as $pythonTestOutput){
-                     $duplicatedTestOutput = new UnitTestsOutputs();
-                     $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
-                     $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
-                     $this->entityManager->persist($duplicatedTestOutput);
-                     
-                 }
-             }  
-             
-             // all is ok, save data in db
-             $this->entityManager->flush();
-             $this->entityManager->getConnection()->commit();
-             return true;
-            
-         } catch(\Exception $e){
-             $this->entityManager->getConnection()->rollback();
-             return false; 
-         }
-         
-     }
-     
-     public function assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated){
-         // get "not python" exercice (misleading entity name, these exercises use frames like smt32)
-         $pythonExerciseFound = $project->getExercise();
-         
-         if(!$pythonExerciseFound){
-             // no exercise for this project, return true to go back in main method
-             return true;
-         }
- 
-         $this->entityManager->getConnection()->beginTransaction(); 
-         try{
-             
-             // we create and persist the exercise with the related project
-             $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
-             $duplicatedPythonExercise->setProject($projectDuplicated);
-             $this->entityManager->persist($duplicatedPythonExercise);
- 
-             // get the frames
-             $framesFound = $this->entityManager
-                 ->getRepository(ExercisePythonFrames::class)
-                 ->findByExercise($pythonExerciseFound);
-             
-             // no data from db, go to the catch block
-             if(!$framesFound) throw new \Exception("No frames found");
- 
-             // create new frame copies for this user and persist them
-             foreach($framesFound as $frameFound){
-                 $duplicatedFrame = new ExercisePythonFrames();
-                 $duplicatedFrame->setExercise($duplicatedPythonExercise);
-                 $duplicatedFrame->setFrame($frameFound->getFrame());
-                 $duplicatedFrame->setComponent($frameFound->getComponent());
-                 $duplicatedFrame->setValue($frameFound->getValue());
-                 $this->entityManager->persist($duplicatedFrame);
-             }
-           
-             // all is ok, save data in db
-             $this->entityManager->flush();
-             $this->entityManager->getConnection()->commit();
-             return true;
-             
-         } catch(\Exception $e){
-             $this->entityManager->getConnection()->rollback();
-             return false;
-         }
-     } */
     /*             'get_shared_link_for_project' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
