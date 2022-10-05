@@ -456,6 +456,11 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
+                if(!$projectExists->getIsExerciseStatementCreator()){
+                    array_push($errors, array('errorType' => 'notExerciseStatementCreator'));
+                    return array('errors' => $errors);
+                }
+                
                 // update the exercise statement if already exists
                 if ($projectExists->getExerciseStatement()) {
                     $projectExists->getExerciseStatement()
