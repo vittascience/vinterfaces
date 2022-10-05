@@ -339,6 +339,10 @@ class ControllerProject extends Controller
                         $projectDuplicated->setExercise($project->getExercise());
                         //$projectDuplicated->setIsExerciseCreator(false);
                     }
+                    if ($project->getExerciseStatement()) {
+                        $projectDuplicated->setExerciseStatement($project->getExerciseStatement());
+                        //$projectDuplicated->setIsExerciseStatementCreator(false);
+                    }
 
                     $this->entityManager->persist($projectDuplicated);
                     $this->entityManager->flush();
