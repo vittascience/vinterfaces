@@ -3,20 +3,18 @@
 namespace Interfaces\Controller;
 
 use User\Entity\User;
-use User\Entity\Regular;
 use GuzzleHttp\Client;
+use User\Entity\Regular;
 use Interfaces\Entity\Project;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 use Interfaces\Entity\LtiProject;
 use Interfaces\Entity\ExerciseStatement;
-
-// @ToBeRemoved last check 22/09/2022 reason: entities used in exercise side instead of project side
-/* use Interfaces\Entity\UnitTests;
+use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\ExercisePython;
 use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
-use Interfaces\Entity\ExercisePythonFrames; */
+use Interfaces\Entity\ExercisePythonFrames;
 
 class ControllerProject extends Controller
 {
@@ -82,20 +80,20 @@ class ControllerProject extends Controller
                 /**
                  * RTC update
                  */
-                
+
                 $projectJSON = json_decode($_POST['project']);
                 $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null;
                 $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
                 if (empty($requesterLink)) return ["errorType" => "no requester link"];
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
-                if($requesterId != null){
+                if ($requesterId != null) {
                     $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
                 }
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
                 $projectSharedStatus = $project->getSharedStatus();
                 $userChanged = [false, null, null];
-                
+
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
@@ -178,39 +176,58 @@ class ControllerProject extends Controller
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
 
+                // bind data
                 $userId = intval($_SESSION['id']);
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
                 $name = !empty($_POST['name']) ? htmlspecialchars(strip_tags(trim($_POST['name']))) : '';
                 $description = !empty($_POST['description']) ? htmlspecialchars(strip_tags(trim($_POST['description']))) : '';
                 $isPublic = $_POST['isPublic'] == 'true' ? true : false;
 
+                // get data from db
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $projectLink));
 
+                // set current code and overide it if interface is Ai
                 $currentCode = $project->getCode();
-                // For ai project we need to duplicate the related assets
                 if ($project->getInterface() == 'ai') {
                     $currentCode = $this->getCodeFromAiInterface($project);
                 }
+
+                // set additional variables if we have incoming data set or use default values
                 $projectName = $name ?? $project->getName();
                 $projectDescription = $description ?? $project->getDescription();
-                $projectIsPublic = $isPublic ;
-                
+                $projectIsPublic = $isPublic;
 
-                $projectBis = new Project($projectName, $projectDescription);
-                $projectBis->setPublic($projectIsPublic);
-                $projectBis->setCode($currentCode);
 
-                $projectBis->setUser($user);
-                $projectBis->setDateUpdated();
-                $projectBis->setCodeText($project->getCodeText());
-                $projectBis->setCodeManuallyModified($project->isCManuallyModified());
-                $projectBis->setLink(uniqid());
-                $projectBis->setInterface($project->getInterface());
-                $this->entityManager->persist($projectBis);
+                $newProject = new Project($projectName, $projectDescription);
+                $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
+
+                $projectDuplicated->setPublic($projectIsPublic);
+                $projectDuplicated->setCode($currentCode);
+
+                $this->entityManager->persist($projectDuplicated);
                 $this->entityManager->flush();
-                return $projectBis;
+
+                // we have an exercise, duplicate it creating a new new exercise linked to the dupliacetd project
+                if ($project->getExercise()) {
+
+                    $duplicatedExercise = new \stdClass;
+
+                    if ($project->getInterface() !== 'python') {
+                        $duplicatedExercise = $this->duplicateAndAssignRelatedExercicesAndFrames($project);
+                    } else {
+                        $duplicatedExercise = $this->duplicateAndAssignRelatedExercicesAndTests($project);
+                    }
+
+                    if ($duplicatedExercise instanceof ExercisePython) {
+                        $projectDuplicated->setExercise($duplicatedExercise);
+                        $projectDuplicated->setIsExerciseCreator(true);
+                    }
+                }
+
+                $this->entityManager->flush();
+                return $projectDuplicated;
             },
             'get_all_user_projects' => function ($data) {
                 // To change
@@ -243,13 +260,13 @@ class ControllerProject extends Controller
                 }
                 return false;
             },
-            'lti_teacher_duplicate_project' => function () {
+            'lti_duplicate_project_for_student' => function () {
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated"];
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
@@ -301,25 +318,30 @@ class ControllerProject extends Controller
                 // no reference of this project in ltiProject ($user + $courseId + $ltiResourceId do not exists)
                 if (!$ltiProjectNotAlreadySubmitted) {
 
-                    // we duplicate the project for this user and save it
-                    $projectDuplicated = new Project(
+                    $newProject = new Project(
                         $project->getName(),
                         $project->getDescription()
                     );
+                    $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
+                    // // we duplicate the project for this user and save it
 
-                    $projectDuplicated->setUser($user);
-                    $projectDuplicated->setDateUpdated();
-                    $projectDuplicated->setCode($project->getCode());
-                    $projectDuplicated->setCodeText($project->getCodeText());
-                    $projectDuplicated->setCodeManuallyModified($project->isCManuallyModified());
-                    $projectDuplicated->setPublic($project->isPublic());
-                    $projectDuplicated->setLink(uniqid());
-                    $projectDuplicated->setInterface($project->getInterface());
+                    // $projectDuplicated->setUser($user);
+                    // $projectDuplicated->setDateUpdated();
+                    // $projectDuplicated->setCode($project->getCode());
+                    // $projectDuplicated->setCodeText($project->getCodeText());
+                    // $projectDuplicated->setCodeManuallyModified($project->isCManuallyModified());
+                    // $projectDuplicated->setPublic($project->isPublic());
+                    // $projectDuplicated->setLink(uniqid());
+                    // $projectDuplicated->setInterface($project->getInterface());
 
                     // set exercise 
                     if ($project->getExercise()) {
                         $projectDuplicated->setExercise($project->getExercise());
                         //$projectDuplicated->setIsExerciseCreator(false);
+                    }
+                    if ($project->getExerciseStatement()) {
+                        $projectDuplicated->setExerciseStatement($project->getExerciseStatement());
+                        //$projectDuplicated->setIsExerciseStatementCreator(false);
                     }
 
                     $this->entityManager->persist($projectDuplicated);
@@ -433,11 +455,16 @@ class ControllerProject extends Controller
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
                 }
+
+                if(!$projectExists->getIsExerciseStatementCreator()){
+                    array_push($errors, array('errorType' => 'notExerciseStatementCreator'));
+                    return array('errors' => $errors);
+                }
                 
                 // update the exercise statement if already exists
-                if($projectExists->getExerciseStatement()){
+                if ($projectExists->getExerciseStatement()) {
                     $projectExists->getExerciseStatement()
-                                    ->setStatementContent($exerciseStatement);
+                        ->setStatementContent($exerciseStatement);
                     $this->entityManager->flush();
                     return array('success' => true);
                 }
@@ -445,10 +472,10 @@ class ControllerProject extends Controller
                 // create exercise statement object
                 $exerciseStatementToSave = new ExerciseStatement;
                 $exerciseStatementToSave->setStatementContent($exerciseStatement);
-                
+
                 // update project with new exercise statement
                 $projectExists->setIsExerciseStatementCreator(true)
-                                ->setExerciseStatement($exerciseStatementToSave);
+                    ->setExerciseStatement($exerciseStatementToSave);
                 // $this->entityManager->persist($exerciseStatementToSave);
                 $this->entityManager->flush();
 
@@ -480,7 +507,7 @@ class ControllerProject extends Controller
 
                 // no errors, get the user and project from interfaces_projects
                 $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId, 'user' => $user]);
 
                 if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
@@ -522,7 +549,7 @@ class ControllerProject extends Controller
 
                 return array('success' => true);
             },
-            'delete_shared_user' => function() {
+            'delete_shared_user' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
@@ -547,7 +574,7 @@ class ControllerProject extends Controller
 
 
                 $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId, 'user' => $user]);
                 if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
@@ -577,7 +604,7 @@ class ControllerProject extends Controller
 
                 return ['success' => true];
             },
-            'update_shared_users_right' => function() {
+            'update_shared_users_right' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
@@ -604,7 +631,7 @@ class ControllerProject extends Controller
                 if (!empty($errors)) return array('errors' => $errors);
                 // no errors, get the user and project from interfaces_projects
                 $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId, 'user' => $user]);
                 if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
@@ -632,7 +659,7 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return ['success' => true];
             },
-            'update_shared_status_for_project' => function() {
+            'update_shared_status_for_project' => function () {
                 // accept only POST request
                 $statusArray = [0, 1, 2];
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -654,7 +681,7 @@ class ControllerProject extends Controller
                 if (!empty($errors)) return array('errors' => $errors);
                 // no errors, get the user and project from interfaces_projects
                 $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
+                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId, 'user' => $user]);
 
                 if (!$projectExists) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
@@ -670,7 +697,7 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return ['success' => true];
             },
-            "get_shared_status" => function() {
+            "get_shared_status" => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // bind and sanitize data
@@ -696,12 +723,12 @@ class ControllerProject extends Controller
                 $projectJSON = json_decode($_POST['project']);
                 $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
-                if($requesterId != null){
+                if ($requesterId != null) {
                     $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
                 }
                 $projectSharedUsers = $project->getSharedUsers();
                 $userChanged = [false, null, null];
-                
+
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
@@ -716,14 +743,13 @@ class ControllerProject extends Controller
                             break;
                         }
                     }
-                    
                 }
-            
+
                 if ($userChanged[0]) {
                     $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
                     $project->setSharedUsers(serialize($unserializedSharedUsers));
                 }
-            
+
                 if ($userChanged[0]) {
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
@@ -735,7 +761,8 @@ class ControllerProject extends Controller
         );
     }
 
-    private function getCodeFromAiInterface($project){
+    private function getCodeFromAiInterface($project)
+    {
         $projectCode = json_decode($project->getCode());
         $arrayKeys = [];
         $trainingDataKeys = $projectCode->trainingDataKeys;
@@ -748,25 +775,25 @@ class ControllerProject extends Controller
         }
         if (!empty($arrayKeys)) {
             $sessionId = session_id();
-            session_write_close();                        
+            session_write_close();
             $cookie = new SetCookie();
             $cookie->setName('PHPSESSID');
             $cookie->setValue($sessionId);
-            $cookie->setDomain($_SERVER["HTTP_HOST"]);                        
+            $cookie->setDomain($_SERVER["HTTP_HOST"]);
             $cookieJar = new CookieJar(
                 false,
                 array(
                     $cookie
                 )
-            );                        
+            );
             $client = new Client();
-            
+
             // work around to detect https scheme (http for local else https prod and test servers)
-            $parts = explode('.',$_SERVER['HTTP_HOST']);
+            $parts = explode('.', $_SERVER['HTTP_HOST']);
             $scheme = count($parts) > 1 ? 'https' : 'http';
 
             $response = $client->request('POST', "$scheme://{$_SERVER["HTTP_HOST"]}/routing/Routing.php?controller=cloud&action=duplicate-assets", [
-                    'form_params' => [
+                'form_params' => [
                     'keys' => $arrayKeys
                 ],
                 'cookies' => $cookieJar
@@ -793,131 +820,133 @@ class ControllerProject extends Controller
         return null;
     }
 
-    /* public function assignRelatedExercicesAndTestsToStudent($project,$projectDuplicated){
+    private function getDuplicatedProject($project, $user, $newProject)
+    {
+        $newProject->setUser($user);
+        $newProject->setDateUpdated();
+        $newProject->setCode($project->getCode());
+        $newProject->setCodeText($project->getCodeText());
+        $newProject->setCodeManuallyModified($project->isCManuallyModified());
+        $newProject->setPublic($project->isPublic());
+        $newProject->setLink(uniqid());
+        $newProject->setInterface($project->getInterface());
+
+        return $newProject;
+    }
+
+    public function duplicateAndAssignRelatedExercicesAndTests($project)
+    {
         // get python exercice
-         $pythonExerciseFound = $project->getExercise();
- 
-         if(!$pythonExerciseFound){
-             // no exercise for this project, return true to go back in main method
-             return true;
-         }
- 
+        $pythonExerciseFound = $project->getExercise();
 
+        $this->entityManager->getConnection()->beginTransaction();
+        try {
 
-         $this->entityManager->getConnection()->beginTransaction();
-         try{
-             
-             // we create and persist the exercise with the related project
-             $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
-             $duplicatedPythonExercise->setProject($projectDuplicated);
-             $this->entityManager->persist($duplicatedPythonExercise);          
- 
-             // get python test related to this exercise in python_tests table
-             $pythonTests = $this->entityManager
-                 ->getRepository(UnitTests::class)
-                 ->findByExercise($pythonExerciseFound);
- 
-             if(!$pythonTests) throw new \Exception("No python tests found");
-            
-             foreach($pythonTests as $pythonTest){
-                 // we create and save the python test with the related exercise
-                 $duplicatedPythonTest = new UnitTests();
-                 $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
-                 $duplicatedPythonTest->setHint($pythonTest->getHint());
-                 $this->entityManager->persist($duplicatedPythonTest);
- 
-                 // get unit tests inputs related to this unit test in python_tests_inputs
-                 $pythonTestInputs = $this->entityManager
-                     ->getRepository(UnitTestsInputs::class)
-                     ->findByUnitTest($pythonTest);
-                 
-                 // no data from db, go to the catch block
-                 if(!$pythonTestInputs) throw new \Exception("No python tests inputs found");
-                 
-                 // create new inputs copies for this user and persist them 
-                 foreach($pythonTestInputs as $pythonTestInput){
-                     $duplicatedTestInput = new UnitTestsInputs();
-                     $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
-                     $duplicatedTestInput->setValue($pythonTestInput->getValue());
-                     $this->entityManager->persist($duplicatedTestInput);
-                 }
-                 
-                 // get unit tests outputs related to this unit test in python_tests_outputs
-                 $pythonTestOutputs = $this->entityManager
-                     ->getRepository(UnitTestsOutputs::class)
-                     ->findByUnitTest($pythonTest);
-                 
-                 // no data from db, go to the catch block
-                 if(!$pythonTestOutputs) throw new \Exception("No python tests outputs found");
-                 
-                 // create new outputs copies for this user and persist them
-                 foreach($pythonTestOutputs as $pythonTestOutput){
-                     $duplicatedTestOutput = new UnitTestsOutputs();
-                     $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
-                     $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
-                     $this->entityManager->persist($duplicatedTestOutput);
-                     
-                 }
-             }  
-             
-             // all is ok, save data in db
-             $this->entityManager->flush();
-             $this->entityManager->getConnection()->commit();
-             return true;
-            
-         } catch(\Exception $e){
-             $this->entityManager->getConnection()->rollback();
-             return false; 
-         }
-         
-     }
-     
-     public function assignRelatedExercicesAndFramesToStudent($project,$projectDuplicated){
-         // get "not python" exercice (misleading entity name, these exercises use frames like smt32)
-         $pythonExerciseFound = $project->getExercise();
-         
-         if(!$pythonExerciseFound){
-             // no exercise for this project, return true to go back in main method
-             return true;
-         }
- 
-         $this->entityManager->getConnection()->beginTransaction(); 
-         try{
-             
-             // we create and persist the exercise with the related project
-             $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
-             $duplicatedPythonExercise->setProject($projectDuplicated);
-             $this->entityManager->persist($duplicatedPythonExercise);
- 
-             // get the frames
-             $framesFound = $this->entityManager
-                 ->getRepository(ExercisePythonFrames::class)
-                 ->findByExercise($pythonExerciseFound);
-             
-             // no data from db, go to the catch block
-             if(!$framesFound) throw new \Exception("No frames found");
- 
-             // create new frame copies for this user and persist them
-             foreach($framesFound as $frameFound){
-                 $duplicatedFrame = new ExercisePythonFrames();
-                 $duplicatedFrame->setExercise($duplicatedPythonExercise);
-                 $duplicatedFrame->setFrame($frameFound->getFrame());
-                 $duplicatedFrame->setComponent($frameFound->getComponent());
-                 $duplicatedFrame->setValue($frameFound->getValue());
-                 $this->entityManager->persist($duplicatedFrame);
-             }
-           
-             // all is ok, save data in db
-             $this->entityManager->flush();
-             $this->entityManager->getConnection()->commit();
-             return true;
-             
-         } catch(\Exception $e){
-             $this->entityManager->getConnection()->rollback();
-             return false;
-         }
-     } */
-     /*             'get_shared_link_for_project' => function () {
+            // we create and persist the exercise with the related project
+            $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
+
+            $this->entityManager->persist($duplicatedPythonExercise);
+
+            // get python test related to this exercise in python_tests table
+            $pythonTests = $this->entityManager
+                ->getRepository(UnitTests::class)
+                ->findByExercise($pythonExerciseFound);
+
+            if (!$pythonTests) throw new \Exception("No python tests found");
+
+            foreach ($pythonTests as $pythonTest) {
+                // we create and save the python test with the related exercise
+                $duplicatedPythonTest = new UnitTests();
+                $duplicatedPythonTest->setExercise($duplicatedPythonExercise);
+                $duplicatedPythonTest->setHint($pythonTest->getHint());
+                $this->entityManager->persist($duplicatedPythonTest);
+
+                // get unit tests inputs related to this unit test in python_tests_inputs
+                $pythonTestInputs = $this->entityManager
+                    ->getRepository(UnitTestsInputs::class)
+                    ->findByUnitTest($pythonTest);
+
+                // no data from db, go to the catch block
+                if (!$pythonTestInputs) throw new \Exception("No python tests inputs found");
+
+                // create new inputs copies for this user and persist them 
+                foreach ($pythonTestInputs as $pythonTestInput) {
+                    $duplicatedTestInput = new UnitTestsInputs();
+                    $duplicatedTestInput->setUnitTest($duplicatedPythonTest);
+                    $duplicatedTestInput->setValue($pythonTestInput->getValue());
+                    $this->entityManager->persist($duplicatedTestInput);
+                }
+
+                // get unit tests outputs related to this unit test in python_tests_outputs
+                $pythonTestOutputs = $this->entityManager
+                    ->getRepository(UnitTestsOutputs::class)
+                    ->findByUnitTest($pythonTest);
+
+                // no data from db, go to the catch block
+                if (!$pythonTestOutputs) throw new \Exception("No python tests outputs found");
+
+                // create new outputs copies for this user and persist them
+                foreach ($pythonTestOutputs as $pythonTestOutput) {
+                    $duplicatedTestOutput = new UnitTestsOutputs();
+                    $duplicatedTestOutput->setUnitTest($duplicatedPythonTest);
+                    $duplicatedTestOutput->setValue($pythonTestOutput->getValue());
+                    $this->entityManager->persist($duplicatedTestOutput);
+                }
+            }
+
+            // all is ok, save data in db
+            $this->entityManager->flush();
+            $this->entityManager->getConnection()->commit();
+            return $duplicatedPythonExercise;
+        } catch (\Exception $e) {
+            $this->entityManager->getConnection()->rollback();
+            return false;
+        }
+    }
+
+    public function duplicateAndAssignRelatedExercicesAndFrames($project)
+    {
+        // get "not python" exercice (misleading entity name, these exercises use frames like smt32)
+        $pythonExerciseFound = $project->getExercise();
+
+        $this->entityManager->getConnection()->beginTransaction();
+        try {
+
+            // we create and persist the exercise with the related project
+            $duplicatedPythonExercise = new ExercisePython($pythonExerciseFound->getFunctionName());
+            //  $duplicatedPythonExercise->setProject($projectDuplicated);
+            $this->entityManager->persist($duplicatedPythonExercise);
+
+            // get the frames
+            $framesFound = $this->entityManager
+                ->getRepository(ExercisePythonFrames::class)
+                ->findByExercise($pythonExerciseFound);
+
+            // no data from db, go to the catch block
+            if (!$framesFound) throw new \Exception("No frames found");
+
+            // create new frame copies for this user and persist them
+            foreach ($framesFound as $frameFound) {
+                $duplicatedFrame = new ExercisePythonFrames();
+                $duplicatedFrame->setExercise($duplicatedPythonExercise);
+                $duplicatedFrame->setFrame($frameFound->getFrame());
+                $duplicatedFrame->setComponent($frameFound->getComponent());
+                $duplicatedFrame->setValue($frameFound->getValue());
+                $this->entityManager->persist($duplicatedFrame);
+            }
+
+            // all is ok, save data in db
+            $this->entityManager->flush();
+            $this->entityManager->getConnection()->commit();
+            return $duplicatedPythonExercise;
+        } catch (\Exception $e) {
+            $this->entityManager->getConnection()->rollback();
+            return false;
+        }
+    }
+   
+
+    /*             'get_shared_link_for_project' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
@@ -952,7 +981,7 @@ class ControllerProject extends Controller
 
                 return ['success' => true, 'shared_link' => $sharedLink];
             }, */
-/*             'add_shared_user_from_link' => function() {
+    /*             'add_shared_user_from_link' => function() {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
