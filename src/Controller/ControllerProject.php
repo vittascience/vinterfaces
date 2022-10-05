@@ -226,6 +226,16 @@ class ControllerProject extends Controller
                     }
                 }
 
+                if ($project->getExerciseStatement()) {
+                    // create exercise statement object
+                    $exerciseStatementToSave = new ExerciseStatement;
+                    $exerciseStatementToSave->setStatementContent($project->getExerciseStatement()->getStatementContent());
+                    $this->entityManager->flush();
+                    
+                    $projectDuplicated->setExerciseStatement($exerciseStatementToSave);
+                    $projectDuplicated->setIsExerciseStatementCreator(true);
+                }
+                
                 $this->entityManager->flush();
                 return $projectDuplicated;
             },
