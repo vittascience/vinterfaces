@@ -642,7 +642,10 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
             'interface' => $this->getInterface(),
+            'exercise'=> $this->getExercise(),
+            'isExerciseCreator'=> $this->getIsExerciseCreator(),
             'exerciseStatement' => $this->getExerciseStatement(),
+            'isExerciseStatementCreator' => $this->getIsExerciseStatementCreator(),
             'sharedUsers' => $sharedUsers,
             'sharedStatus' => $this->getSharedStatus(),
         ];
