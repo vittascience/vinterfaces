@@ -466,7 +466,8 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
-                if(!$projectExists->getIsExerciseStatementCreator()){
+                // the user is not the creator and we have an exercise already stored
+                if(!$projectExists->getIsExerciseStatementCreator() && $projectExists->getExerciseStatement()){
                     array_push($errors, array('errorType' => 'notExerciseStatementCreator'));
                     return array('errors' => $errors);
                 }
