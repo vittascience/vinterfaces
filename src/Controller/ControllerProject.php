@@ -82,7 +82,8 @@ class ControllerProject extends Controller
                  */
 
                 $projectJSON = json_decode($_POST['project']);
-                $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null;
+                /* $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null; */
+                $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
                 $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
                 if (empty($requesterLink)) return ["errorType" => "no requester link"];
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
@@ -525,13 +526,20 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
+                $unserializedSharedUsers = [];
                 $actualSharedUser = $projectExists->getSharedUsers();
-                if ($actualSharedUser) {
+                /* if (strlen($actualSharedUser) > 2 ) {
+                    $unserializedSharedUsers = @unserialize($actualSharedUser);
+                } */
+                if (str_starts_with($actualSharedUser, "a:")) {
+                    $unserializedSharedUsers = @unserialize($actualSharedUser);
+                }
+                /* if ($actualSharedUser) {
                     $unserializedSharedUsers = @unserialize($actualSharedUser);
                     if (!$unserializedSharedUsers) {
                         $unserializedSharedUsers = [];
                     }
-                }
+                } */
 
                 // Format of the shared users array:
                 // [[userId: 1, right: 1], [userId: 2, right: 2]]...
