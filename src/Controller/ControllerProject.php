@@ -196,14 +196,15 @@ class ControllerProject extends Controller
                 }
 
                 // set additional variables if we have incoming data set or use default values
-                $projectName = $name ?? $project->getName();
-                $projectDescription = $description ?? $project->getDescription();
+                $projectName = !empty($name) ? $name : $project->getName();
+                $projectDescription = !empty($description) ? $description : $project->getDescription();
                 $projectIsPublic = $isPublic;
 
 
                 $newProject = new Project($projectName, $projectDescription);
                 $projectDuplicated = $this->getDuplicatedProject($project, $user, $newProject);
 
+                $projectDuplicated->setName($projectName);
                 $projectDuplicated->setPublic($projectIsPublic);
                 $projectDuplicated->setCode($currentCode);
 
