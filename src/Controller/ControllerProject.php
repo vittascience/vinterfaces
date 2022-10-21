@@ -2,6 +2,7 @@
 
 namespace Interfaces\Controller;
 
+use Firebase\JWT\JWT;
 use User\Entity\User;
 use GuzzleHttp\Client;
 use User\Entity\Regular;
@@ -777,6 +778,32 @@ class ControllerProject extends Controller
                 } else {
                     return ['status' => false, 'message' => "User déjà à jour"];
                 }
+            },
+            'get_signed_project'=> function(){
+                $link = $_POST['link'];
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $iss = "https://{$_SERVER['HTTP_HOST']}";
+                $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
+                
+                $kid = "rtc";
+
+                $jwtClaims = [
+                    "iss" => $iss,
+                    "sub" => 'anonymous',
+                    "aud" => "rtc",
+                    "project" => $project,
+                    "exp" => time() + 7200,
+                    "iat" => time()
+                ];
+
+                $token = JWT::encode(
+                    $jwtClaims,
+                    $privateKey,
+                    'RS256',
+                    $kid
+                );
+                
+                return $token;
             }
         );
     }
