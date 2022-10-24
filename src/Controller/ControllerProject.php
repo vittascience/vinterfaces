@@ -82,11 +82,57 @@ class ControllerProject extends Controller
                  * RTC update
                  */
 
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $incomingProject = null;
+                if(isset($_POST['jwtToken'])){
+                    // bind and sanitize incoming jwt token
+                    $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
+
+                    // the jwt is empty
+                    if (empty($jwtToken)) return ["errorType" => "no jwt token received"];
+
+                    // the jwt is ok
+                    /* $decodedTokenHeader = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[0]))));
+                    $decodedTokenPayload = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[1]))));
+                    $decodedTokenHeaderKid = $decodedTokenHeader->kid; */
+                    
+                    $validatedToken = JWT::decode(
+                        $jwtToken, 
+                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                        array('RS256')
+                    );
+
+                    if(!empty($validatedToken->project)) $incomingProject = $validatedToken->project;
+                } else $incomingProject = json_decode($_POST['project']);
+
+                // $sanitizedIncomingProject = $this->sanitizeIncomingProject($incomingProject);
+                /////////////////////////////////////
                 $projectJSON = json_decode($_POST['project']);
                 /* $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null; */
                 $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
-                $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
-                if (empty($requesterLink)) return ["errorType" => "no requester link"];
+                $jwtToken = !empty($_POST['jwtToken']) ? $_POST['jwtToken'] : null;
+                //$requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
+            //     if (empty($jwtToken)) return ["errorType" => "no jwt token received"];
+            //     // $decodedToken = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[0]))));
+            //     $decodedTokenHeader = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[0]))));
+            //     $decodedTokenPayload = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[1]))));
+            //     $decodedTokenHeaderKid = $decodedTokenHeader->kid;
+            //     $decodedTokenPayloadIss = $decodedTokenPayload->iss;
+            //     //if (empty($requesterLink)) return ["errorType" => "no requester link"];
+            //     $validatedToken = JWT::decode(
+            //         $jwtToken, 
+            //         JWK::parseKeySet(json_decode(file_get_contents("$decodedTokenPayloadIss/jwks"), true)), 
+            //         array('RS256')
+            //     );
+            //   return array(
+            //     'kid'=> $decodedTokenHeaderKid ,
+            //     'iss'=> $decodedTokenPayloadIss,
+            //     'validatedToken'=>  $validatedToken
+            // );
+                var_dump('hello');
+                //var_dump($decodedToken);gggrgvrzgr
+                die();
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
                 if ($requesterId != null) {
                     $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
