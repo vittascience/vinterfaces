@@ -84,34 +84,51 @@ class ControllerProject extends Controller
 
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
+                //$requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
+                $jwtToken = !empty($_POST['jwtToken']) ? $_POST['jwtToken'] : null;
+
+                $userId = null;
                 $incomingProject = null;
+                $errors = [];
                 if(isset($_POST['jwtToken'])){
                     // bind and sanitize incoming jwt token
                     $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
-
                     // the jwt is empty
-                    if (empty($jwtToken)) return ["errorType" => "no jwt token received"];
-
+                    if (empty($jwtToken)) {
+                        $errors[] = ["errorType" => "no jwt token received"];
+                        return ["errors" => $errors];
+                    }
                     // the jwt is ok
                     /* $decodedTokenHeader = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[0]))));
                     $decodedTokenPayload = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[1]))));
                     $decodedTokenHeaderKid = $decodedTokenHeader->kid; */
+                    try {
+                        $validatedToken = JWT::decode(
+                            $jwtToken, 
+                            JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                            array('RS256')
+                        );
+                    } catch (\Exception $e) {
+                        $errors[] = ["errorType" => "token not validated"];
+                        return ["errors" => $errors];
+                    }
                     
-                    $validatedToken = JWT::decode(
-                        $jwtToken, 
-                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
-                        array('RS256')
-                    );
+                    if(!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
+                    $userId = $validatedToken->sub;
+                } else {
+                    $incomingProject = json_decode($_POST['project']);
+                    $userId = $_SESSION['id'];
+                }
 
-                    if(!empty($validatedToken->project)) $incomingProject = $validatedToken->project;
-                } else $incomingProject = json_decode($_POST['project']);
-
+                $sanitizedProject = $this->sanitizeIncomingProject($incomingProject);
+                return ['project' => $incomingProject, 'sanitizedProject' => $sanitizedProject];
+                if(empty($incomingProject)) {
+                    $errors[] = ["errorType" => "no project received"];
+                    return ["errors" => $errors];
+                }
                 // $sanitizedIncomingProject = $this->sanitizeIncomingProject($incomingProject);
                 /////////////////////////////////////
-                $projectJSON = json_decode($_POST['project']);
-                /* $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null; */
-                $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
-                $jwtToken = !empty($_POST['jwtToken']) ? $_POST['jwtToken'] : null;
+                
                 //$requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
             //     if (empty($jwtToken)) return ["errorType" => "no jwt token received"];
             //     // $decodedToken = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $jwtToken)[0]))));
@@ -1036,6 +1053,18 @@ class ControllerProject extends Controller
             $this->entityManager->getConnection()->rollback();
             return false;
         }
+    }
+
+    private function sanitizeIncomingProject($incomingProject)
+    {
+        $project = new \stdClass();
+        $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
+        $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
+        $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
+        $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
+        $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
+        $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
+        return $project;
     }
    
 
