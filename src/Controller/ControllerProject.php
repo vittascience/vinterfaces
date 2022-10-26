@@ -617,15 +617,15 @@ class ControllerProject extends Controller
 
                 // bind and sanitize data
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $sharedUsersId = !empty($_POST['shared_user_id']) ? json_decode($_POST['shared_user_id']) : null;
+                $sharedUserId = !empty($_POST['shared_user_id']) ? htmlspecialchars(strip_tags(trim($_POST['shared_user_id']))) : null;
 
                 // check for errors
                 $errors = [];
                 if (empty($projectId)) {
                     array_push($errors, array('errorType' => 'projectIdInvalid'));
                 }
-                if (empty($sharedUsersId)) {
-                    array_push($errors, array('errorType' => 'sharedUsersIdInvalid'));
+                if (empty($sharedUserId)) {
+                    array_push($errors, array('errorType' => 'sharedUserIdInvalid'));
                 }
 
                 // some errors found, return them
@@ -652,11 +652,17 @@ class ControllerProject extends Controller
                     array_push($errors, array('errorType' => 'sharedUsersNotFound'));
                     return array('errors' => $errors);
                 }
-
-                foreach ($unserializedSharedUsers as $user) {
-                    if (in_array($user['userId'], $sharedUsersId)) {
-                        unset($unserializedSharedUsers[$user['userId']]);
+                $isRemoved = false;
+                for ($i=0; $i<count($unserializedSharedUsers); $i++) {
+                    if ($unserializedSharedUsers[$i]['userId'] == $sharedUserId) {
+                        unset($unserializedSharedUsers[$i]);
+                        $isRemoved = true;
+                        break;
                     }
+                }
+                if (!$isRemoved) {
+                    array_push($errors, array('errorType' => 'userNotRemoved'));
+                    return array('errors' => $errors);
                 }
 
                 $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
