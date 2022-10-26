@@ -678,7 +678,7 @@ class ControllerProject extends Controller
                 // bind and sanitize data
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
                 $sharedUsersId = !empty($_POST['shared_users_id']) ? htmlspecialchars(strip_tags(trim($_POST['shared_users_id']))) : null;
-                $sharedUsersRight = !empty($_POST['shared_users_right']) ? intval($_POST['shared_users_right']) : null;
+                $sharedUsersRight = !empty($_POST['shared_users_right']) ? htmlspecialchars(strip_tags(trim($_POST['shared_users_right']))) : null;
 
                 // check for errors
                 $errors = [];
