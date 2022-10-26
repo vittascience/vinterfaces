@@ -1107,7 +1107,9 @@ class ControllerProject extends Controller
     }
    
 
-    /*             'get_shared_link_for_project' => function () {
+    /*             
+    @toBeRemoved useless functions 26/10/2022
+    'get_shared_link_for_project' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
