@@ -302,7 +302,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function getCode()
     {
-        return $this->code;
+        return htmlspecialchars_decode($this->code) ;
     }
 
     /**
@@ -311,7 +311,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     public function setCode($code)
     {
         if (is_string($code)) {
-            $this->code = $code;
+            $this->code = htmlspecialchars($code);
         } else {
             throw new EntityDataIntegrityException("code needs to be string");
         }
@@ -322,7 +322,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function getCodeText()
     {
-        return $this->codeText;
+        return htmlspecialchars_decode($this->codeText);
     }
 
     /**
@@ -331,7 +331,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     public function setCodeText($codeText)
     {
         if (is_string($codeText)) {
-            $this->codeText = $codeText;
+            $this->codeText = htmlspecialchars($codeText);
         } else {
             throw new EntityDataIntegrityException("codeText needs to be string");
         }

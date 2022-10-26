@@ -2,18 +2,20 @@
 
 namespace Interfaces\Controller;
 
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
 use User\Entity\User;
 use GuzzleHttp\Client;
 use User\Entity\Regular;
 use Interfaces\Entity\Project;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
-use Interfaces\Entity\LtiProject;
-use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\UnitTests;
+use Interfaces\Entity\LtiProject;
 use Interfaces\Entity\ExercisePython;
 use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
+use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
 
 class ControllerProject extends Controller
@@ -76,20 +78,54 @@ class ControllerProject extends Controller
                 return $project; //synchronized
             },
             'update_my_project' => function ($data) {
-
+                
                 /**
                  * RTC update
                  */
 
-                $projectJSON = json_decode($_POST['project']);
-                /* $requesterId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null; */
-                $requesterId = !empty($_POST['requesterId']) ? intval($_POST['requesterId']) : null;
-                $requesterLink = !empty($_POST['requesterLink']) ? $_POST['requesterLink'] : null;
-                if (empty($requesterLink)) return ["errorType" => "no requester link"];
-                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
-                if ($requesterId != null) {
-                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $jwtToken = !empty($_POST['jwtToken']) ? $_POST['jwtToken'] : null;
+                $userId = null;
+                $incomingProject = null;
+                $errors = [];
+                if(isset($_POST['jwtToken'])){
+                    // bind and sanitize incoming jwt token
+                    $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
+                    // the jwt is empty
+                    if (empty($jwtToken)) {
+                        $errors[] = ["errorType" => "no jwt token received"];
+                        return ["errors" => $errors];
+                    }
+
+                    try {
+                        $validatedToken = JWT::decode(
+                            $jwtToken, 
+                            JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                            array('RS256')
+                        );
+                    } catch (\Exception $e) {
+                        $errors[] = ["errorType" => "token not validated"];
+                        return ["errors" => $errors];
+                    }
+                    
+                    if(!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
+                    $userId = $validatedToken->sub;
+                } else {
+                    $incomingProject = json_decode($_POST['project']);
+                    $userId = $_SESSION['id'];
                 }
+
+                if(empty($userId)) {
+                    $errors[] = ["errorType" => "noUserId"];
+                    return ["errors" => $errors];
+                }
+
+                $sanitizedProject = $this->sanitizeIncomingProject($incomingProject);
+                $errors = $this->checkForProjectErrors($sanitizedProject);
+                if(!empty($errors)) return ["errors" => $errors];
+
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $sanitizedProject->link));
+                $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $userId]);
                 $projectOwner = $project->getUser();
                 $projectSharedUsers = $project->getSharedUsers();
                 $projectSharedStatus = $project->getSharedStatus();
@@ -103,24 +139,28 @@ class ControllerProject extends Controller
                 }
 
                 $canUpdateProject = false;
-                if ($projectOwner->getId() == $requesterId) {
+                if ($projectOwner->getId() == $userId) {
                     $canUpdateProject = true;
                 } else {
                     if ($unserializedSharedUsers) {
                         foreach ($unserializedSharedUsers as $key => $sharedUser) {
-                            if ($sharedUser['userId'] == $requesterId) {
+                            if ($sharedUser['userId'] == $userId) {
                                 if ($sharedUser['right'] == 2) {
                                     $canUpdateProject = true;
                                     break;
                                 }
-                            } else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
+                            } 
+                            
+                            /* @toBeRemoved @Sebastien 26/10/2022
+                            This checked is already done at the entrance of the server so it is not necessary here. To be removed.
+                            else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
                                 if ($sharedUser['right'] == 2) {
                                     $sharedUser['userId'] = $requesterRegular->getUser()->getId();
                                     $canUpdateProject = true;
                                     $userChanged = [true, $key, $sharedUser['userId']];
                                     break;
                                 }
-                            }
+                            } */
                         }
                     }
                 }
@@ -136,12 +176,12 @@ class ControllerProject extends Controller
 
                 if ($canUpdateProject || $projectSharedStatus) {
                     $project->setDateUpdated();
-                    $project->setCode($projectJSON->code);
-                    $project->setName($projectJSON->name);
-                    $project->setDescription($projectJSON->description);
-                    $project->setCodeText($projectJSON->codeText);
-                    $project->setCodeManuallyModified($projectJSON->codeManuallyModified);
-                    $project->setPublic($projectJSON->public);
+                    $project->setCode($sanitizedProject->code);
+                    $project->setName($sanitizedProject->name);
+                    $project->setDescription($sanitizedProject->description);
+                    $project->setCodeText($sanitizedProject->codeText);
+                    $project->setCodeManuallyModified($sanitizedProject->codeManuallyModified);
+                    $project->setPublic($sanitizedProject->public);
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
                     return $project;
@@ -739,12 +779,49 @@ class ControllerProject extends Controller
                 return ['success' => true, 'sharedStatus' => $projectExists->getSharedStatus()];
             },
             'update_shared_users_id' => function ($data) {
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $jwtToken = !empty($_POST['jwtToken']) ? $_POST['jwtToken'] : null;
+                $userId = null;
+                $incomingProject = null;
+                $errors = [];
 
-                $projectJSON = json_decode($_POST['project']);
-                $requesterId = !empty($_POST['requesterId']) ? $_POST['requesterId'] : null;
-                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $projectJSON->link));
-                if ($requesterId != null) {
-                    $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $requesterId]);
+                // bind and sanitize incoming jwt token
+                $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
+                // the jwt is empty
+                if (empty($jwtToken)) {
+                    $errors[] = ["errorType" => "no jwt token received"];
+                    return ["errors" => $errors];
+                }
+
+                try {
+                    $validatedToken = JWT::decode(
+                        $jwtToken, 
+                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                        array('RS256')
+                    );
+                } catch (\Exception $e) {
+                    $errors[] = ["errorType" => "token not validated"];
+                    return ["errors" => $errors];
+                }
+                
+                if(!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
+                $userId = $validatedToken->sub;
+
+
+                if(empty($userId)) {
+                    $errors[] = ["errorType" => "noUserId"];
+                    return ["errors" => $errors];
+                }
+
+                $sanitizedProject = $this->sanitizeIncomingProject($incomingProject);
+                $errors = $this->checkForProjectErrors($sanitizedProject);
+                if(!empty($errors)) return ["errors" => $errors];
+
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $sanitizedProject->link));
+                $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $userId]);
+                if(empty($requesterRegular)) {
+                    $errors[] = ["errorType" => "noUserRegular"];
+                    return ["errors" => $errors];
                 }
                 $projectSharedUsers = $project->getSharedUsers();
                 $userChanged = [false, null, null];
@@ -756,27 +833,51 @@ class ControllerProject extends Controller
                     }
                 }
                 if ($unserializedSharedUsers) {
-                    foreach ($unserializedSharedUsers as $key => $sharedUser) {
+                    for ($i=0; $i<count($unserializedSharedUsers); $i++) {
+                        $sharedUser = $unserializedSharedUsers[$i];
                         if ($requesterRegular->getEmail() == $sharedUser['userId']) {
                             $sharedUser['userId'] = $requesterRegular->getUser()->getId();
-                            $userChanged = [true, $key, $sharedUser['userId']];
+                            $userChanged = [true, $i, $sharedUser['userId']];
                             break;
                         }
                     }
                 }
 
-                if ($userChanged[0]) {
-                    $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
-                    $project->setSharedUsers(serialize($unserializedSharedUsers));
-                }
-
-                if ($userChanged[0]) {
-                    $this->entityManager->persist($project);
-                    $this->entityManager->flush();
-                    return $project;
-                } else {
+                if ($userChanged[0] == false) {
+                    // to be improved in the future for better front end handling
                     return ['status' => false, 'message' => "User déjà à jour"];
                 }
+                $unserializedSharedUsers[$userChanged[1]]['userId'] = $userChanged[2];
+                $project->setSharedUsers(serialize($unserializedSharedUsers));
+                $this->entityManager->persist($project);
+                $this->entityManager->flush();
+                return $project;
+            },
+            'get_signed_project'=> function(){
+                $link = $_POST['link'];
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $iss = "https://{$_SERVER['HTTP_HOST']}";
+                $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
+                
+                $kid = "rtc";
+
+                $jwtClaims = [
+                    "iss" => $iss,
+                    "sub" => 'anonymous',
+                    "aud" => "rtc",
+                    "project" => $project,
+                    "exp" => time() + 7200,
+                    "iat" => time()
+                ];
+
+                $token = JWT::encode(
+                    $jwtClaims,
+                    $privateKey,
+                    'RS256',
+                    $kid
+                );
+                
+                return $token;
             }
         );
     }
@@ -964,9 +1065,51 @@ class ControllerProject extends Controller
             return false;
         }
     }
+
+    private function sanitizeIncomingProject($incomingProject)
+    {
+        $project = new \stdClass();
+        $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
+        $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
+        $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
+        $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
+        $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
+        $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
+        $project->link = !empty($incomingProject->link) ? htmlspecialchars(strip_tags(trim($incomingProject->link))) : '';
+        return $project;
+    }
+
+    private function checkForProjectErrors($project)
+    {
+        $errors = [];
+        if (empty($project->code)) {
+            $errors[] = ['errorType'=>'missingCode'];
+        }
+        if (empty($project->name)) {
+            $errors[] = ['errorType'=>'missingName'];
+        }
+        if (empty($project->description)) {
+            $errors[] = ['errorType'=>'missingDescription'];
+        }
+        if (empty($project->codeText)) {
+            $errors[] = ['errorType'=>'missingCodeText'];
+        }
+        if (!is_bool($project->codeManuallyModified) ) {
+            $errors[] = ['errorType'=>'codeManuallyModifiedNotBoolean'];
+        }
+        if (!is_bool($project->public)) {
+            $errors[] = ['errorType'=>'publicNotBoolean'];
+        }
+        if (empty($project->link)) {
+            $errors[] = ['errorType'=>'missingLink'];
+        }
+        return $errors;
+    }
    
 
-    /*             'get_shared_link_for_project' => function () {
+    /*             
+    @toBeRemoved useless functions 26/10/2022
+    'get_shared_link_for_project' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
                 // accept only connected user
