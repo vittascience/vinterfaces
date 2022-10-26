@@ -149,14 +149,18 @@ class ControllerProject extends Controller
                                     $canUpdateProject = true;
                                     break;
                                 }
-                            } else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
+                            } 
+                            
+                            /* @toBeRemoved @Sebastien 26/10/2022
+                            This checked is already done at the entrance of the server so it is not necessary here. To be removed.
+                            else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
                                 if ($sharedUser['right'] == 2) {
                                     $sharedUser['userId'] = $requesterRegular->getUser()->getId();
                                     $canUpdateProject = true;
                                     $userChanged = [true, $key, $sharedUser['userId']];
                                     break;
                                 }
-                            }
+                            } */
                         }
                     }
                 }
