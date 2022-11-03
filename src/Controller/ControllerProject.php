@@ -451,19 +451,28 @@ class ControllerProject extends Controller
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
+                $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])){
+                    array_push($errors, array('errorType'=> 'ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated' ));
+                    return array('errors' => $errors);
+                } 
+
 
                 // bind and sanitize incoming data
                 $ltiProjectId = !empty($_SESSION['lti_project_id']) ? intval($_SESSION['lti_project_id']) : null;
-                if (empty($ltiProjectId)) return ["errorType" => "ltiProjectIdInvalid"];
+                if (empty($ltiProjectId)){
+                    array_push($errors, array('errorType'=> 'ltiProjectIdInvalid' ));
+                    return array('errors' => $errors);
+                } 
 
                 // no errors, get lti Project from interfaces_lti_projects table
                 $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->find($ltiProjectId);
 
                 // no project found with the provided id, return an error
                 if (!$ltiProjectFound) {
-                    return array('errorType' => 'ltiProjectNotFound');
+                    array_push($errors, array('errorType'=> 'ltiProjectNotFound' ));
+                    return array('errors' => $errors);
                 }
 
                 // project found, update and save it
