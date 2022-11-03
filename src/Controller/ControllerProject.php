@@ -329,8 +329,8 @@ class ControllerProject extends Controller
                 // initialize empty $errors array
                 $errors = [];
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
-                if (empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
-                if (empty($projectLink)) $errors['projectLinkInvalid'] = true;
+                if (empty($ltiResourceLinkId)) array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
+                if (empty($projectLink)) array_push($errors, array('errorType'=> 'projectLinkInvalid' )); 
 
                 // some errors found, return them
                 if (!empty($errors)) {
@@ -348,7 +348,8 @@ class ControllerProject extends Controller
 
                 // the project does not exists, return an error
                 if (!$project) {
-                    return array('errorType' => 'projectNotFoundWithProvidedLink');
+                    array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
+                    return array('errors' => $errors);
                 }
 
                 //set up defaults params( without $ltiCourseIs as it is optional)
