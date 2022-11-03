@@ -316,9 +316,13 @@ class ControllerProject extends Controller
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-
+                
+                $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])){
+                    array_push($errors, array('errorType'=> 'ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated' ));
+                    return array('errors' => $errors);
+                } 
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
@@ -327,7 +331,7 @@ class ControllerProject extends Controller
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
 
                 // initialize empty $errors array
-                $errors = [];
+               
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
                 if (empty($ltiResourceLinkId)) array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
                 if (empty($projectLink)) array_push($errors, array('errorType'=> 'projectLinkInvalid' )); 
