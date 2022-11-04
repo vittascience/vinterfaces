@@ -316,9 +316,13 @@ class ControllerProject extends Controller
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-
+                
+                $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])){
+                    array_push($errors, array('errorType'=> 'ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated' ));
+                    return array('errors' => $errors);
+                } 
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
@@ -327,10 +331,10 @@ class ControllerProject extends Controller
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
 
                 // initialize empty $errors array
-                $errors = [];
+               
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
-                if (empty($ltiResourceLinkId)) $errors['resourceLinkIdInvalid'] = true;
-                if (empty($projectLink)) $errors['projectLinkInvalid'] = true;
+                if (empty($ltiResourceLinkId)) array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
+                if (empty($projectLink)) array_push($errors, array('errorType'=> 'projectLinkInvalid' )); 
 
                 // some errors found, return them
                 if (!empty($errors)) {
@@ -348,7 +352,8 @@ class ControllerProject extends Controller
 
                 // the project does not exists, return an error
                 if (!$project) {
-                    return array('errorType' => 'projectNotFoundWithProvidedLink');
+                    array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
+                    return array('errors' => $errors);
                 }
 
                 //set up defaults params( without $ltiCourseIs as it is optional)
@@ -446,19 +451,28 @@ class ControllerProject extends Controller
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
+                $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated"];
+                if (empty($_SESSION['id'])){
+                    array_push($errors, array('errorType'=> 'ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated' ));
+                    return array('errors' => $errors);
+                } 
+
 
                 // bind and sanitize incoming data
                 $ltiProjectId = !empty($_SESSION['lti_project_id']) ? intval($_SESSION['lti_project_id']) : null;
-                if (empty($ltiProjectId)) return ["errorType" => "ltiProjectIdInvalid"];
+                if (empty($ltiProjectId)){
+                    array_push($errors, array('errorType'=> 'ltiProjectIdInvalid' ));
+                    return array('errors' => $errors);
+                } 
 
                 // no errors, get lti Project from interfaces_lti_projects table
                 $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->find($ltiProjectId);
 
                 // no project found with the provided id, return an error
                 if (!$ltiProjectFound) {
-                    return array('errorType' => 'ltiProjectNotFound');
+                    array_push($errors, array('errorType'=> 'ltiProjectNotFound' ));
+                    return array('errors' => $errors);
                 }
 
                 // project found, update and save it
