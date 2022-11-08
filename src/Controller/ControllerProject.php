@@ -485,6 +485,73 @@ class ControllerProject extends Controller
                     'id' => $ltiProjectFound->getId()
                 );
             },
+            'lti_save_draft_project' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $errors = [];
+                // accept only connected user
+                if (empty($_SESSION['id'])) {
+                    array_push($errors, array('errorType' => 'ltiSaveDraftProjectNotRetrievedNotAuthenticated'));
+                    return array('errors' => $errors);
+                }
+
+                // bind and sanitize incoming data
+                $userId = intval($_SESSION['id']);
+                $projectLinkId = !empty($_POST['project_link_id']) ? htmlspecialchars(strip_tags(trim($_POST['project_link_id']))) : '';
+                $ltiCourseId = !empty($_POST['lti_course_id']) ? htmlspecialchars(strip_tags(trim($_POST['lti_course_id']))) : '';
+                $interface = !empty($_POST['interface']) ? htmlspecialchars(strip_tags(trim($_POST['interface']))) : '';
+
+                // check for errors and return them if any
+                if (empty($projectLinkId)) array_push($errors, array('errorType' => 'projectLinkIdInvalid'));
+                if (empty($interface)) array_push($errors, array('errorType' => 'interfaceInvalid'));
+                if(!empty($errors))  return array('errors' => $errors);
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+
+                // set default params for doctrine query
+                $queryParams = array(
+                    'user' => $user,
+                    'userProjectLinkId' => $projectLinkId,
+                    'isSubmitted' => false
+                );
+
+                // add additional param if needed
+                if (!empty($ltiCourseId)) $queryParams['ltiCourseId'] = $ltiCourseId;
+
+                $ltiProjectFound = $this->entityManager
+                    ->getRepository(LtiProject::class)
+                    ->findOneBy($queryParams);
+
+                // no project create it
+                if (!$ltiProjectFound) {
+                    
+                    $ltiProject = new LtiProject();
+                    $ltiProject->setUser($user);
+                    $ltiProject->setUserProjectLink($projectLinkId);
+                    $ltiProject->setLtiResourceLinkId($interface);
+                    $ltiProject->setIsSubmitted(false);
+                    if ($ltiCourseId) {
+                        $ltiProject->setLtiCourseId($ltiCourseId);
+                    }
+
+                    $this->entityManager->persist($ltiProject);
+                    $this->entityManager->flush();
+                    return $ltiProject;
+                }
+
+                return $ltiProjectFound;
+                /**	parameters
+                 * projectLink
+                 * ?courseId
+                 *  */
+                // Method check
+                // Sanitize
+                // $_SESSION['id'] check => projectLink
+                // LtiProject retrieve with user_project_link + isSubmitted = false
+                // LtiProject exist => return success
+                // Otherwise => Create LtiProject with interface name as lti_resource_id
+                // return success
+            },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
