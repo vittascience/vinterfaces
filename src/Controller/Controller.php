@@ -1,7 +1,7 @@
 <?php
 
 namespace Interfaces\Controller;
-
+use Dotenv\Dotenv;
 class Controller
 {
     protected $actions = [];
@@ -9,6 +9,9 @@ class Controller
     protected $user;
     protected function __construct($entityManager, $user)
     {
+        $dotenv = Dotenv::createImmutable(__DIR__."/../");
+        $dotenv->safeLoad();
+        $this->envVariables = $_ENV;
         $this->entityManager = $entityManager;
         $this->user = $user;
     }

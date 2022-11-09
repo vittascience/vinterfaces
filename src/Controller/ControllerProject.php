@@ -17,6 +17,7 @@ use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
 use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
+use Utils\Mailer;
 
 class ControllerProject extends Controller
 {
@@ -884,6 +885,43 @@ class ControllerProject extends Controller
                 );
                 
                 return $token;
+            },
+            'rtc_project_access_ask'=> function(){
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                if ($link == '') return ["success" => false, "error" => "Empty link", "message" => "Lien de projet non valide", "bg" => "bg-danger"];
+                $email = !empty($_POST['email']) ? htmlspecialchars(strip_tags(trim($_POST['email']))) : null;
+                if ($email == null) return ["success" => false, "error" => "Empty email", "message" => "Adresse e-mail incorrecte", "bg" => "bg-danger"];
+                $message = !empty($_POST['message']) ? htmlspecialchars(strip_tags(trim($_POST['message']))) : '';
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $interface = $project->getInterface();
+                $projectName = $project->getName();
+                $projectOwner = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $project->getUser()]);
+                $projectOwnerEmail = $projectOwner->getEmail();
+                $body = `<br>
+                <p>
+                    Bonjour, un utilisateur a souhaité avoir accès à votre projet Vittascience suivant : {$projectName}.
+                </p>
+                <p>
+                    Voici son adresse e-mail : {$email} <br> ainsi que son message : {$message}
+                </p>
+                <p>
+                    Vous pouvez lui donner accès à votre projet en cliquant sur le lien suivant : <br><a href='https://vittascience.com/{$interface}/?link={$link}'>https://vittascience.com/{$interface}/?link={$link}</a><br>
+                    et en cliquant sur le bouton "Partager" en haut à gauche de la page, puis dans l'onglet "envoyer par e-mail" entrez son adresse e-mail ainsi que le droit que vous souhaitez lui attribuer.
+                </p>
+                <p>
+                    Si vous ne souhaitez pas donner accès à votre projet à cet utilisateur, vous pouvez ignorer cet e-mail.
+                </p>
+                <p>
+                    Cordialement, <br>
+                    L'équipe Vittascience
+                </p>
+                <br>`;
+                $sendSuccess = Mailer::sendMail($projectOwnerEmail,  "Demande d'accès à votre projet Vittascience" , $body, strip_tags($body), "fr_defaultMailerTemplate");
+                if(!$sendSuccess){
+                    return ["success" => false, "message" => "Une erreur est survenue lors de l'envoi du mail", "bg" => "bg-danger"];
+                } 
+                return ["success" => true, "message" => "Votre demande a bien été envoyée.", "bg" => "bg-success"];
             }
         );
     }
