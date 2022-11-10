@@ -302,7 +302,10 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function getCode()
     {
-        return htmlspecialchars_decode($this->code) ;
+        if(str_starts_with($this->code, '&lt;') ){
+            return htmlspecialchars_decode($this->code) ;
+        }
+        return $this->code;
     }
 
     /**
