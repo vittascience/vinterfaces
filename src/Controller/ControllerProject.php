@@ -1146,12 +1146,12 @@ class ControllerProject extends Controller
         if (empty($project->name)) {
             $errors[] = ['errorType'=>'missingName'];
         }
-        if (empty($project->description)) {
+        /* if (empty($project->description)) {
             $errors[] = ['errorType'=>'missingDescription'];
         }
         if (empty($project->codeText)) {
             $errors[] = ['errorType'=>'missingCodeText'];
-        }
+        } */
         if (!is_bool($project->codeManuallyModified) ) {
             $errors[] = ['errorType'=>'codeManuallyModifiedNotBoolean'];
         }
