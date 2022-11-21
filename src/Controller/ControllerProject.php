@@ -479,7 +479,7 @@ class ControllerProject extends Controller
                 } 
                 
                 // bind and sanitize incoming data
-                $projectLink = !empty($_POST['projectLink']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
+                $projectLink = !empty($_POST['project_link']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
                 if(empty($projectLink)){
                     array_push($errors, array('errorType'=> 'projectLinkInvalid' ));
                     return array('errors' => $errors);
@@ -520,7 +520,7 @@ class ControllerProject extends Controller
                 $ltiCourseId = !empty($_POST['lti_course_id']) ? htmlspecialchars(strip_tags(trim($_POST['lti_course_id']))) : '';
 
                 // check for errors and return them if any
-                if (empty($$projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
+                if (empty($projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
                 if(!empty($errors))  return array('errors' => $errors);
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
 
@@ -563,10 +563,10 @@ class ControllerProject extends Controller
 
                     $this->entityManager->persist($ltiProject);
                     $this->entityManager->flush();
-                    return $ltiProject;
+                    return $ltiProject->jsonSerialize();
                 }
                
-                return $ltiProjectFound;
+                return $ltiProjectFound->jsonSerialize();
             },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request
