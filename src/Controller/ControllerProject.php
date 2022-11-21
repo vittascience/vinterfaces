@@ -874,9 +874,9 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $project;
             },
-            'get_signed_project'=> function(){
+            'get_signed_link'=> function(){
                 $link = $_POST['link'];
-                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
                 
@@ -886,7 +886,7 @@ class ControllerProject extends Controller
                     "iss" => $iss,
                     "sub" => 'anonymous',
                     "aud" => "rtc",
-                    "project" => $project,
+                    "link" => $link,
                     "exp" => time() + 7200,
                     "iat" => time()
                 ];
