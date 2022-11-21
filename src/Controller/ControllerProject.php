@@ -498,25 +498,33 @@ class ControllerProject extends Controller
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
-                $projectLinkId = !empty($_POST['project_link_id']) ? htmlspecialchars(strip_tags(trim($_POST['project_link_id']))) : '';
+                $projectLink = !empty($_POST['project_link']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
                 $ltiCourseId = !empty($_POST['lti_course_id']) ? htmlspecialchars(strip_tags(trim($_POST['lti_course_id']))) : '';
-                $interface = !empty($_POST['interface']) ? htmlspecialchars(strip_tags(trim($_POST['interface']))) : '';
 
                 // check for errors and return them if any
-                if (empty($projectLinkId)) array_push($errors, array('errorType' => 'projectLinkIdInvalid'));
-                if (empty($interface)) array_push($errors, array('errorType' => 'interfaceInvalid'));
+                if (empty($$projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
                 if(!empty($errors))  return array('errors' => $errors);
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
 
                 // set default params for doctrine query
                 $queryParams = array(
                     'user' => $user,
-                    'userProjectLinkId' => $projectLinkId,
+                    'userProjectLink' => $projectLink,
                     'isSubmitted' => false
                 );
 
                 // add additional param if needed
                 if (!empty($ltiCourseId)) $queryParams['ltiCourseId'] = $ltiCourseId;
+
+                $mainProject = $this->entityManager->getRepository(Project::class)-> findOneBy(array(
+                    'user'=> $user,
+                    'link' => $projectLink
+                ));
+
+                if(!$mainProject){
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
 
                 $ltiProjectFound = $this->entityManager
                     ->getRepository(LtiProject::class)
@@ -527,8 +535,8 @@ class ControllerProject extends Controller
                     
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);
-                    $ltiProject->setUserProjectLink($projectLinkId);
-                    $ltiProject->setLtiResourceLinkId($interface);
+                    $ltiProject->setUserProjectLink($projectLink);
+                    $ltiProject->setLtiResourceLinkId($mainProject->getInterface());
                     $ltiProject->setIsSubmitted(false);
                     if ($ltiCourseId) {
                         $ltiProject->setLtiCourseId($ltiCourseId);
@@ -538,19 +546,8 @@ class ControllerProject extends Controller
                     $this->entityManager->flush();
                     return $ltiProject;
                 }
-
+               
                 return $ltiProjectFound;
-                /**	parameters
-                 * projectLink
-                 * ?courseId
-                 *  */
-                // Method check
-                // Sanitize
-                // $_SESSION['id'] check => projectLink
-                // LtiProject retrieve with user_project_link + isSubmitted = false
-                // LtiProject exist => return success
-                // Otherwise => Create LtiProject with interface name as lti_resource_id
-                // return success
             },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request

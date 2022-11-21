@@ -169,4 +169,15 @@ class LtiProject {
 
         return $this;
     }
+
+    public function jsonSerialize(){
+        return array(
+            'id'=> $this->getId(),
+            'user' => $this->getUser()->jsonSerialize(),
+            'userProjectLink' => $this->getUserProjectLink(),
+            'ltiCourseId' => $this->getLtiCourseId(),
+            'resourceLinkId' => $this->getLtiResourceLinkId(),
+            'isSubmitted' => $this->getIsSubmitted()
+        );
+    }
 }
