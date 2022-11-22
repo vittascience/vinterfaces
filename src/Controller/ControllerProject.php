@@ -78,7 +78,7 @@ class ControllerProject extends Controller
                 return $project; //synchronized
             },
             'update_my_project' => function ($data) {
-                
+
                 /**
                  * RTC update
                  */
@@ -88,7 +88,7 @@ class ControllerProject extends Controller
                 $userId = null;
                 $incomingProject = null;
                 $errors = [];
-                if(isset($_POST['jwtToken'])){
+                if (isset($_POST['jwtToken'])) {
                     // bind and sanitize incoming jwt token
                     $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
                     // the jwt is empty
@@ -99,30 +99,30 @@ class ControllerProject extends Controller
 
                     try {
                         $validatedToken = JWT::decode(
-                            $jwtToken, 
-                            JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                            $jwtToken,
+                            JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)),
                             array('RS256')
                         );
                     } catch (\Exception $e) {
                         $errors[] = ["errorType" => "token not validated"];
                         return ["errors" => $errors];
                     }
-                    
-                    if(!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
+
+                    if (!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
                     $userId = $validatedToken->sub;
                 } else {
                     $incomingProject = json_decode($_POST['project']);
                     $userId = $_SESSION['id'];
                 }
 
-                if(empty($userId)) {
+                if (empty($userId)) {
                     $errors[] = ["errorType" => "noUserId"];
                     return ["errors" => $errors];
                 }
 
                 $sanitizedProject = $this->sanitizeIncomingProject($incomingProject);
                 $errors = $this->checkForProjectErrors($sanitizedProject);
-                if(!empty($errors)) return ["errors" => $errors];
+                if (!empty($errors)) return ["errors" => $errors];
 
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $sanitizedProject->link));
                 $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $userId]);
@@ -149,8 +149,8 @@ class ControllerProject extends Controller
                                     $canUpdateProject = true;
                                     break;
                                 }
-                            } 
-                            
+                            }
+
                             /* @toBeRemoved @Sebastien 26/10/2022
                             This checked is already done at the entrance of the server so it is not necessary here. To be removed.
                             else if ($requesterRegular->getEmail() == $sharedUser['userId']) {
@@ -277,11 +277,11 @@ class ControllerProject extends Controller
                     $exerciseStatementToSave = new ExerciseStatement;
                     $exerciseStatementToSave->setStatementContent($project->getExerciseStatement()->getStatementContent());
                     $this->entityManager->flush();
-                    
+
                     $projectDuplicated->setExerciseStatement($exerciseStatementToSave);
                     $projectDuplicated->setIsExerciseStatementCreator(true);
                 }
-                
+
                 // save the project again with additional exercise and exercise statement eventually
                 $this->entityManager->flush();
                 return $projectDuplicated;
@@ -326,10 +326,10 @@ class ControllerProject extends Controller
                 $errors = [];
 
                 // accept only connected user
-                if (empty($_SESSION['id'])){
-                    array_push($errors, array('errorType'=> 'ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated' ));
+                if (empty($_SESSION['id'])) {
+                    array_push($errors, array('errorType' => 'ltiDuplicateProjectForStudentNotRetrievedNotAuthenticated'));
                     return array('errors' => $errors);
-                } 
+                }
 
                 // bind and sanitize incoming data
                 $userId = intval($_SESSION['id']);
@@ -338,8 +338,8 @@ class ControllerProject extends Controller
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
 
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
-                if (empty($ltiResourceLinkId)) array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
-                if (empty($projectLink)) array_push($errors, array('errorType'=> 'projectLinkInvalid' )); 
+                if (empty($ltiResourceLinkId)) array_push($errors, array('errorType' => 'resourceLinkIdInvalid'));
+                if (empty($projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
 
                 // some errors found, return them
                 if (!empty($errors)) {
@@ -357,7 +357,7 @@ class ControllerProject extends Controller
 
                 // the project does not exists, return an error
                 if (!$project) {
-                    array_push($errors, array('errorType'=> 'resourceLinkIdInvalid' ));
+                    array_push($errors, array('errorType' => 'resourceLinkIdInvalid'));
                     return array('errors' => $errors);
                 }
 
@@ -435,24 +435,24 @@ class ControllerProject extends Controller
 
                 $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])){
-                    array_push($errors, array('errorType'=> 'ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated' ));
+                if (empty($_SESSION['id'])) {
+                    array_push($errors, array('errorType' => 'ltiDuplicateTeacherProjectNotRetrievedNotAuthenticated'));
                     return array('errors' => $errors);
-                } 
+                }
 
                 // bind and sanitize incoming data
                 $ltiProjectId = !empty($_SESSION['lti_project_id']) ? intval($_SESSION['lti_project_id']) : null;
-                if (empty($ltiProjectId)){
-                    array_push($errors, array('errorType'=> 'ltiProjectIdInvalid' ));
+                if (empty($ltiProjectId)) {
+                    array_push($errors, array('errorType' => 'ltiProjectIdInvalid'));
                     return array('errors' => $errors);
-                } 
+                }
 
                 // no errors, get lti Project from interfaces_lti_projects table
                 $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->find($ltiProjectId);
 
                 // no project found with the provided id, return an error
                 if (!$ltiProjectFound) {
-                    array_push($errors, array('errorType'=> 'ltiProjectNotFound' ));
+                    array_push($errors, array('errorType' => 'ltiProjectNotFound'));
                     return array('errors' => $errors);
                 }
 
@@ -473,25 +473,25 @@ class ControllerProject extends Controller
 
                 $errors = [];
                 // accept only connected user
-                if (empty($_SESSION['id'])){
-                    array_push($errors, array('errorType'=> 'ltiTeacherSubmitProjectNotRetrievedNotAuthenticated' ));
+                if (empty($_SESSION['id'])) {
+                    array_push($errors, array('errorType' => 'ltiTeacherSubmitProjectNotRetrievedNotAuthenticated'));
                     return array('errors' => $errors);
-                } 
-                
+                }
+
                 // bind and sanitize incoming data
                 $projectLink = !empty($_POST['project_link']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
-                if(empty($projectLink)){
-                    array_push($errors, array('errorType'=> 'projectLinkInvalid' ));
+                if (empty($projectLink)) {
+                    array_push($errors, array('errorType' => 'projectLinkInvalid'));
                     return array('errors' => $errors);
                 }
 
                 // no errors, get lti Project from interfaces_lti_projects table
                 $ltiProjectFound = $this->entityManager->getRepository(LtiProject::class)->findOneBy(array(
-                   'userProjectLink' => $projectLink
+                    'userProjectLink' => $projectLink
                 ));
 
                 // no project found with the provided id, return an error
-                if (!$ltiProjectFound)  return array('msg'=> 'ltiProjectNotFound' );
+                if (!$ltiProjectFound)  return array('msg' => 'ltiProjectNotFound');
 
                 // project found, update and save it
                 $ltiProjectFound->setIsSubmitted(true);
@@ -521,17 +521,17 @@ class ControllerProject extends Controller
 
                 // check for errors and return them if any
                 if (empty($projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
-                if(!empty($errors))  return array('errors' => $errors);
+                if (!empty($errors))  return array('errors' => $errors);
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
 
                 // retrieve the main project in interfaces_projects table
-                $mainProject = $this->entityManager->getRepository(Project::class)-> findOneBy(array(
-                    'user'=> $user,
+                $mainProject = $this->entityManager->getRepository(Project::class)->findOneBy(array(
+                    'user' => $user,
                     'link' => $projectLink
                 ));
 
                 // main project not found, return an error
-                if(!$mainProject){
+                if (!$mainProject) {
                     array_push($errors, array('errorType' => 'projectNotFound'));
                     return array('errors' => $errors);
                 }
@@ -565,8 +565,91 @@ class ControllerProject extends Controller
                     $this->entityManager->flush();
                     return $ltiProject->jsonSerialize();
                 }
-               
+
                 return $ltiProjectFound->jsonSerialize();
+            },
+            'lti_teacher_reset_project' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "ltiTeacherResetProjectNotRetrievedNotAuthenticated"];
+
+                // initialize empty errors array
+                $errors = [];
+                $projectLink = !empty($_POST['project_link']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
+                if(empty($projectLink)){
+                    array_push($errors, array('errorType' => 'projectLinkInvalid'));
+                    return array('errors' => $errors);
+                }
+
+                // retrieve the project from db
+                $projectFound = $this->entityManager->getRepository(Project::class)->findOneByLink($projectLink);
+                if(!$projectFound){
+                    array_push($errors, array('errorType' => 'projectNotFound'));
+                    return array('errors' => $errors);
+                }
+
+                // current project is exercise statement creator
+                if($projectFound->getIsExerciseStatementCreator()){
+                    // TODO delete the exercise statement and set isExerciseStatementCreator to false
+                    dump($projectFound->getExerciseStatement());
+                }
+
+                if($projectFound->getIsExerciseCreator()){
+                    if($projectFound->getInterface() === "python"){
+                        // 2 - delete the unit tests
+                        $unitTests = $this->entityManager->getRepository(UnitTests::class)->findByExercise($projectFound->getExercise());
+                        if($unitTests){
+                            // foreach($unitTests as $unitTest){
+                            //     $unitTestInputs = $this->entityManager->getRepository(UnitTestsInputs::class)->findBy(array(
+                            //         'unitTest'=> $unitTest
+                            //     ));
+
+                            //     foreach($unitTestInputs as $unitTestInput){
+
+                            //         dump($unitTestInput);
+                            //     }
+                            //     // $this->entityManager->remove($unitTest);
+                            // }
+                            // foreach($unitTests as $unitTest){
+
+                            //     $unitTestOutputs = $this->entityManager->getRepository(UnitTestsOutputs::class)->findBy(array(
+                            //         'unitTest'=> $unitTest
+                            //     ));
+
+                            //     foreach($unitTestOutputs as $unitTestOutput){
+
+                            //         dump($unitTestOutput);
+                            //     }
+                            //     // $this->entityManager->remove($unitTest);
+                            // }
+                            foreach($unitTests as $unitTest){
+                                $this->entityManager->remove($unitTest);
+                            }
+                        }
+
+                        // 3 - delete the exercise and set isExerciseCreator to false
+                        
+                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find(29);
+                        // $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
+                       
+                        $projectFound->setIsExerciseCreator(false);
+                        $projectFound->setExercise(null);
+                        $this->entityManager->remove($exercise);
+                        $this->entityManager->flush();
+                        
+                    }
+                    if($projectFound->getInterface() === "stm32"){
+                        // TODO delete the exercise and set isExerciseCreator to false
+                        dump($projectFound->getExercise());
+                    }
+                     
+                }
+
+
+                dd($projectFound);
+                return array('msg' => "3005149");
             },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request
@@ -606,11 +689,11 @@ class ControllerProject extends Controller
                 }
 
                 // the user is not the creator and we have an exercise already stored
-                if(!$projectExists->getIsExerciseStatementCreator() && $projectExists->getExerciseStatement()){
+                if (!$projectExists->getIsExerciseStatementCreator() && $projectExists->getExerciseStatement()) {
                     array_push($errors, array('errorType' => 'notExerciseStatementCreator'));
                     return array('errors' => $errors);
                 }
-                
+
                 // update the exercise statement if already exists
                 if ($projectExists->getExerciseStatement()) {
                     $projectExists->getExerciseStatement()
@@ -750,7 +833,7 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
                 $isRemoved = false;
-                for ($i=0; $i<count($unserializedSharedUsers); $i++) {
+                for ($i = 0; $i < count($unserializedSharedUsers); $i++) {
                     if ($unserializedSharedUsers[$i]['userId'] == $sharedUserId) {
                         unset($unserializedSharedUsers[$i]);
                         $isRemoved = true;
@@ -898,31 +981,31 @@ class ControllerProject extends Controller
 
                 try {
                     $validatedToken = JWT::decode(
-                        $jwtToken, 
-                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                        $jwtToken,
+                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)),
                         array('RS256')
                     );
                 } catch (\Exception $e) {
                     $errors[] = ["errorType" => "token not validated"];
                     return ["errors" => $errors];
                 }
-                
-                if(!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
+
+                if (!empty($validatedToken->project)) $incomingProject = json_decode($validatedToken->project);
                 $userId = $validatedToken->sub;
 
 
-                if(empty($userId)) {
+                if (empty($userId)) {
                     $errors[] = ["errorType" => "noUserId"];
                     return ["errors" => $errors];
                 }
 
                 $sanitizedProject = $this->sanitizeIncomingProject($incomingProject);
                 $errors = $this->checkForProjectErrors($sanitizedProject);
-                if(!empty($errors)) return ["errors" => $errors];
+                if (!empty($errors)) return ["errors" => $errors];
 
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $sanitizedProject->link));
                 $requesterRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $userId]);
-                if(empty($requesterRegular)) {
+                if (empty($requesterRegular)) {
                     $errors[] = ["errorType" => "noUserRegular"];
                     return ["errors" => $errors];
                 }
@@ -936,7 +1019,7 @@ class ControllerProject extends Controller
                     }
                 }
                 if ($unserializedSharedUsers) {
-                    for ($i=0; $i<count($unserializedSharedUsers); $i++) {
+                    for ($i = 0; $i < count($unserializedSharedUsers); $i++) {
                         $sharedUser = $unserializedSharedUsers[$i];
                         if ($requesterRegular->getEmail() == $sharedUser['userId']) {
                             $sharedUser['userId'] = $requesterRegular->getUser()->getId();
@@ -956,12 +1039,12 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $project;
             },
-            'get_signed_project'=> function(){
+            'get_signed_project' => function () {
                 $link = $_POST['link'];
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
-                
+
                 $kid = "rtc";
 
                 $jwtClaims = [
@@ -979,7 +1062,7 @@ class ControllerProject extends Controller
                     'RS256',
                     $kid
                 );
-                
+
                 return $token;
             }
         );
@@ -1186,29 +1269,29 @@ class ControllerProject extends Controller
     {
         $errors = [];
         if (empty($project->code)) {
-            $errors[] = ['errorType'=>'missingCode'];
+            $errors[] = ['errorType' => 'missingCode'];
         }
         if (empty($project->name)) {
-            $errors[] = ['errorType'=>'missingName'];
+            $errors[] = ['errorType' => 'missingName'];
         }
         if (empty($project->description)) {
-            $errors[] = ['errorType'=>'missingDescription'];
+            $errors[] = ['errorType' => 'missingDescription'];
         }
         if (empty($project->codeText)) {
-            $errors[] = ['errorType'=>'missingCodeText'];
+            $errors[] = ['errorType' => 'missingCodeText'];
         }
-        if (!is_bool($project->codeManuallyModified) ) {
-            $errors[] = ['errorType'=>'codeManuallyModifiedNotBoolean'];
+        if (!is_bool($project->codeManuallyModified)) {
+            $errors[] = ['errorType' => 'codeManuallyModifiedNotBoolean'];
         }
         if (!is_bool($project->public)) {
-            $errors[] = ['errorType'=>'publicNotBoolean'];
+            $errors[] = ['errorType' => 'publicNotBoolean'];
         }
         if (empty($project->link)) {
-            $errors[] = ['errorType'=>'missingLink'];
+            $errors[] = ['errorType' => 'missingLink'];
         }
         return $errors;
     }
-   
+
 
     /*             
     @toBeRemoved useless functions 26/10/2022
