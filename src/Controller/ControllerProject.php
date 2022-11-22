@@ -846,7 +846,7 @@ class ControllerProject extends Controller
                 }
                 $projectSharedUsers = $project->getSharedUsers();
                 $userChanged = [false, null, null];
-
+                $unserializedSharedUsers = [];
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
