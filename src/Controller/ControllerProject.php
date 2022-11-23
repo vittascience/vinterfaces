@@ -846,7 +846,7 @@ class ControllerProject extends Controller
                 }
                 $projectSharedUsers = $project->getSharedUsers();
                 $userChanged = [false, null, null];
-
+                $unserializedSharedUsers = [];
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
@@ -874,9 +874,10 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $project;
             },
-            'get_signed_project'=> function(){
-                $link = $_POST['link'];
-                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+            'get_signed_link'=> function(){
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
                 
@@ -886,7 +887,7 @@ class ControllerProject extends Controller
                     "iss" => $iss,
                     "sub" => 'anonymous',
                     "aud" => "rtc",
-                    "project" => $project,
+                    "link" => $link,
                     "exp" => time() + 7200,
                     "iat" => time()
                 ];
@@ -936,6 +937,49 @@ class ControllerProject extends Controller
                     return ["success" => false, "message" => "Une erreur est survenue lors de l'envoi du mail", "bg" => "bg-danger"];
                 } 
                 return ["success" => true, "message" => "Votre demande a bien été envoyée.", "bg" => "bg-success"];
+            },
+            'get_signed_project_rtc'=> function(){
+                //return 'ok';
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
+                try {
+                    $validatedToken = JWT::decode(
+                        $jwtToken, 
+                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                        array('RS256')
+                    );
+                } catch (\Exception $e) {
+                    $errors[] = ["errorType" => "token not validated"];
+                    return ["errors" => $errors];
+                }
+
+                if(!empty($validatedToken->link)){
+                    $link = $validatedToken->link;
+                }
+                //$link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : null;
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $iss = "https://{$_SERVER['HTTP_HOST']}";
+                $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
+                
+                $kid = "rtc";
+
+                $jwtClaims = [
+                    "iss" => $iss,
+                    "sub" => 'anonymous',
+                    "aud" => "rtc",
+                    "project" => $project,
+                    "exp" => time() + 7200,
+                    "iat" => time()
+                ];
+
+                $token = JWT::encode(
+                    $jwtClaims,
+                    $privateKey,
+                    'RS256',
+                    $kid
+                );
+                
+                return $token;
             }
         );
     }
