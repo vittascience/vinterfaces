@@ -875,7 +875,8 @@ class ControllerProject extends Controller
                 return $project;
             },
             'get_signed_link'=> function(){
-                $link = $_POST['link'];
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
                 //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
