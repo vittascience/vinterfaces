@@ -302,7 +302,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function getCode()
     {
-        return htmlspecialchars_decode($this->code) ;
+        return htmlspecialchars_decode($this->code);
     }
 
     /**
@@ -479,7 +479,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function setIsExerciseCreator($isExerciseCreator)
     {
-        if(!is_bool($isExerciseCreator)){
+        if (!is_bool($isExerciseCreator)) {
             throw new EntityDataIntegrityException("The exercise creator property has to be a boolean value");
         }
 
@@ -491,7 +491,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * Get the value of isExerciseStatementCreator
      *
      * @return  bool
-     */ 
+     */
     public function getIsExerciseStatementCreator()
     {
         return $this->isExerciseStatementCreator;
@@ -503,10 +503,10 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      * @param  bool  $isExerciseStatementCreator
      *
      * @return  self
-     */ 
+     */
     public function setIsExerciseStatementCreator($isExerciseStatementCreator)
     {
-        if(!is_bool($isExerciseStatementCreator)){
+        if (!is_bool($isExerciseStatementCreator)) {
             throw new EntityDataIntegrityException("The exercise statement creator property has to be a boolean value");
         }
 
@@ -533,11 +533,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function setExerciseStatement($exerciseStatement)
     {
-        if(! ($exerciseStatement instanceof ExerciseStatement)){
-            throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class");
+        if ($exerciseStatement === null || $exerciseStatement instanceof ExerciseStatement ) {
+            $this->exerciseStatement = $exerciseStatement;
+            return $this;
         }
-        $this->exerciseStatement = $exerciseStatement;
-        return $this;
+        throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class or null");
     }
 
     /**
@@ -642,8 +642,8 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'link' => $this->getLink(),
             'mode' => $this->getMode(),
             'interface' => $this->getInterface(),
-            'exercise'=> $this->getExercise(),
-            'isExerciseCreator'=> $this->getIsExerciseCreator(),
+            'exercise' => $this->getExercise(),
+            'isExerciseCreator' => $this->getIsExerciseCreator(),
             'exerciseStatement' => $this->getExerciseStatement(),
             'isExerciseStatementCreator' => $this->getIsExerciseStatementCreator(),
             'sharedUsers' => $sharedUsers,
@@ -668,5 +668,4 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
         return $classInstance;
     }
-
 }

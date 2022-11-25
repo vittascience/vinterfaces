@@ -592,64 +592,42 @@ class ControllerProject extends Controller
 
                 // current project is exercise statement creator
                 if($projectFound->getIsExerciseStatementCreator()){
-                    // TODO delete the exercise statement and set isExerciseStatementCreator to false
-                    dump($projectFound->getExerciseStatement());
+
+                    $exerciseStatement = $this->entityManager->getRepository(ExerciseStatement::class)->find($projectFound->getExerciseStatement()->getId());
+
+                    // update the project, then remove the statement from interfaces_exercise_statement
+                    $projectFound->setIsExerciseStatementCreator(false);
+                    $projectFound->setExerciseStatement(null);
+                    $this->entityManager->remove($exerciseStatement);
+                    $this->entityManager->flush();
                 }
 
                 if($projectFound->getIsExerciseCreator()){
                     if($projectFound->getInterface() === "python"){
-                        // 2 - delete the unit tests
-                        $unitTests = $this->entityManager->getRepository(UnitTests::class)->findByExercise($projectFound->getExercise());
-                        if($unitTests){
-                            // foreach($unitTests as $unitTest){
-                            //     $unitTestInputs = $this->entityManager->getRepository(UnitTestsInputs::class)->findBy(array(
-                            //         'unitTest'=> $unitTest
-                            //     ));
-
-                            //     foreach($unitTestInputs as $unitTestInput){
-
-                            //         dump($unitTestInput);
-                            //     }
-                            //     // $this->entityManager->remove($unitTest);
-                            // }
-                            // foreach($unitTests as $unitTest){
-
-                            //     $unitTestOutputs = $this->entityManager->getRepository(UnitTestsOutputs::class)->findBy(array(
-                            //         'unitTest'=> $unitTest
-                            //     ));
-
-                            //     foreach($unitTestOutputs as $unitTestOutput){
-
-                            //         dump($unitTestOutput);
-                            //     }
-                            //     // $this->entityManager->remove($unitTest);
-                            // }
-                            foreach($unitTests as $unitTest){
-                                $this->entityManager->remove($unitTest);
-                            }
-                        }
-
-                        // 3 - delete the exercise and set isExerciseCreator to false
                         
-                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find(29);
-                        // $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
+                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
                        
-                        $projectFound->setIsExerciseCreator(false);
+                       // update the project, then remove the exercise from python_exercise
+                        $projectFound->setIsExerciseCreator(false); 
                         $projectFound->setExercise(null);
                         $this->entityManager->remove($exercise);
                         $this->entityManager->flush();
                         
                     }
                     if($projectFound->getInterface() === "stm32"){
-                        // TODO delete the exercise and set isExerciseCreator to false
-                        dump($projectFound->getExercise());
+                        $exercise = $this->entityManager->getRepository(ExercisePython::class)-> find($projectFound->getExercise()->getId());
+
+                        // update the project, then remove the exercise from python_exercise table
+                        $projectFound->setIsExerciseCreator(false);
+                        $projectFound->setExercise(null);
+                        $this->entityManager->remove($exercise);
+                        $this->entityManager->flush();
                     }
                      
                 }
 
-
-                dd($projectFound);
-                return array('msg' => "3005149");
+                return $projectFound;
+                
             },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request
