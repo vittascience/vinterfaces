@@ -70,7 +70,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $code = "";
     /**
-     * @ORM\Column(name="code_language", type="string", length=16777215, nullable=false)
+     * @ORM\Column(name="code_language", type="string", length=16777215, nullable=true)
      * @var string
      */
     private $codeText = "";
@@ -333,7 +333,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
      */
     public function setCodeText($codeText)
     {
-        if (is_string($codeText)) {
+        if ($codeText == '' || is_string($codeText)) {
             $this->codeText = htmlspecialchars($codeText);
         } else {
             throw new EntityDataIntegrityException("codeText needs to be string");
