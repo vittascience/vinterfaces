@@ -17,6 +17,7 @@ use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
 use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
+use Utils\Mailer;
 
 class ControllerProject extends Controller
 {
@@ -989,7 +990,7 @@ class ControllerProject extends Controller
                 }
                 $projectSharedUsers = $project->getSharedUsers();
                 $userChanged = [false, null, null];
-
+                $unserializedSharedUsers = [];
                 if ($projectSharedUsers) {
                     $unserializedSharedUsers = @unserialize($projectSharedUsers);
                     if (!$unserializedSharedUsers) {
@@ -1017,8 +1018,89 @@ class ControllerProject extends Controller
                 $this->entityManager->flush();
                 return $project;
             },
-            'get_signed_project' => function () {
-                $link = $_POST['link'];
+            'get_signed_link'=> function(){
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $iss = "https://{$_SERVER['HTTP_HOST']}";
+                $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
+                
+                $kid = "rtc";
+
+                $jwtClaims = [
+                    "iss" => $iss,
+                    "sub" => 'anonymous',
+                    "aud" => "rtc",
+                    "link" => $link,
+                    "exp" => time() + 7200,
+                    "iat" => time()
+                ];
+
+                $token = JWT::encode(
+                    $jwtClaims,
+                    $privateKey,
+                    'RS256',
+                    $kid
+                );
+                
+                return $token;
+            },
+            'rtc_project_access_ask'=> function(){
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                if ($link == '') return ["success" => false, "error" => "Empty link", "message" => "Lien de projet non valide", "bg" => "bg-danger"];
+                $email = !empty($_POST['email']) ? htmlspecialchars(strip_tags(trim($_POST['email']))) : null;
+                if ($email == null) return ["success" => false, "error" => "Empty email", "message" => "Adresse e-mail incorrecte", "bg" => "bg-danger"];
+                $message = !empty($_POST['message']) ? htmlspecialchars(strip_tags(trim($_POST['message']))) : '';
+                $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
+                $interface = $project->getInterface();
+                $projectName = $project->getName();
+                $projectOwner = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $project->getUser()]);
+                $projectOwnerEmail = $projectOwner->getEmail();
+                $body = `<br>
+                <p>
+                    Bonjour, un utilisateur a souhaité avoir accès à votre projet Vittascience suivant : {$projectName}.
+                </p>
+                <p>
+                    Voici son adresse e-mail : {$email} <br> ainsi que son message : {$message}
+                </p>
+                <p>
+                    Vous pouvez lui donner accès à votre projet en cliquant sur le lien suivant : <br><a href='https://vittascience.com/{$interface}/?link={$link}'>https://vittascience.com/{$interface}/?link={$link}</a><br>
+                    et en cliquant sur le bouton "Partager" en haut à gauche de la page, puis dans l'onglet "envoyer par e-mail" entrez son adresse e-mail ainsi que le droit que vous souhaitez lui attribuer.
+                </p>
+                <p>
+                    Si vous ne souhaitez pas donner accès à votre projet à cet utilisateur, vous pouvez ignorer cet e-mail.
+                </p>
+                <p>
+                    Cordialement, <br>
+                    L'équipe Vittascience
+                </p>
+                <br>`;
+                $sendSuccess = Mailer::sendMail($projectOwnerEmail,  "Demande d'accès à votre projet Vittascience" , $body, strip_tags($body), "fr_defaultMailerTemplate");
+                if(!$sendSuccess){
+                    return ["success" => false, "message" => "Une erreur est survenue lors de l'envoi du mail", "bg" => "bg-danger"];
+                } 
+                return ["success" => true, "message" => "Votre demande a bien été envoyée.", "bg" => "bg-success"];
+            },
+            'get_signed_project_rtc'=> function(){
+                //return 'ok';
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                $jwtToken = !empty($_POST['jwtToken']) ? htmlspecialchars(strip_tags(trim($_POST['jwtToken']))) : null;
+                try {
+                    $validatedToken = JWT::decode(
+                        $jwtToken, 
+                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true)), 
+                        array('RS256')
+                    );
+                } catch (\Exception $e) {
+                    $errors[] = ["errorType" => "token not validated"];
+                    return ["errors" => $errors];
+                }
+
+                if(!empty($validatedToken->link)){
+                    $link = $validatedToken->link;
+                }
+                //$link = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : null;
                 $project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
@@ -1252,14 +1334,14 @@ class ControllerProject extends Controller
         if (empty($project->name)) {
             $errors[] = ['errorType' => 'missingName'];
         }
-        if (empty($project->description)) {
-            $errors[] = ['errorType' => 'missingDescription'];
+        /* if (empty($project->description)) {
+            $errors[] = ['errorType'=>'missingDescription'];
         }
         if (empty($project->codeText)) {
-            $errors[] = ['errorType' => 'missingCodeText'];
-        }
-        if (!is_bool($project->codeManuallyModified)) {
-            $errors[] = ['errorType' => 'codeManuallyModifiedNotBoolean'];
+            $errors[] = ['errorType'=>'missingCodeText'];
+        } */
+        if (!is_bool($project->codeManuallyModified) ) {
+            $errors[] = ['errorType'=>'codeManuallyModifiedNotBoolean'];
         }
         if (!is_bool($project->public)) {
             $errors[] = ['errorType' => 'publicNotBoolean'];
