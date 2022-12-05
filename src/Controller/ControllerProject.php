@@ -17,6 +17,7 @@ use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
 use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
+use stdClass;
 use Utils\Mailer;
 
 class ControllerProject extends Controller
@@ -31,7 +32,7 @@ class ControllerProject extends Controller
             },
             'get_all_public' => function ($data) {
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->findBy(array("public" => true, "deleted" => false, "interface" => $data['interface']));
+                    ->getSummaryPublicProjects(array("public" => true, "deleted" => false, "interface" => $data['interface']));
             },
             'get_by_link' => function ($data) {
                 $link = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $data['link']);
@@ -40,7 +41,7 @@ class ControllerProject extends Controller
             },
             'get_by_user' => function ($data) {
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->findBy(array("user" => $this->user['id'], "deleted" => false, "interface" => $data['interface']));
+                    ->getSummaryPersonalProjects(array("user" => $this->user['id'], "deleted" => false, "interface" => $data['interface']));
             },
             'generate_link' => function ($data) {
                 $user = $this->entityManager->getRepository('User\Entity\User')
