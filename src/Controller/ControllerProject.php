@@ -17,7 +17,6 @@ use Interfaces\Entity\UnitTestsInputs;
 use Interfaces\Entity\UnitTestsOutputs;
 use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
-use stdClass;
 use Utils\Mailer;
 
 class ControllerProject extends Controller
