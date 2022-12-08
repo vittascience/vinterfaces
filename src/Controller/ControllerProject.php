@@ -641,7 +641,7 @@ class ControllerProject extends Controller
                 $userId = intval($_SESSION['id']);
                 $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
                 $exerciseStatement = !empty($_POST['exercise_statement'])
-                    ? htmlspecialchars(strip_tags(trim($_POST['exercise_statement'])))
+                    ? htmlspecialchars(trim($_POST['exercise_statement']))
                     : '';
 
                 // check for errors
