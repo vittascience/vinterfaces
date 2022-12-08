@@ -43,7 +43,7 @@ class ExerciseStatement implements \JsonSerializable
      */
     public function getStatementContent()
     {
-        return $this->statementContent;
+        return htmlspecialchars_decode($this->statementContent);
     }
 
     /**
