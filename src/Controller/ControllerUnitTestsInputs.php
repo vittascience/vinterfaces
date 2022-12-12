@@ -40,8 +40,12 @@ class ControllerUnitTestsInputs extends Controller
                 return $idTabToReturn;
             },
             "delete" => function ($data) {
-                $databaseInput = $this->entityManager->getRepository('Interfaces\Entity\UnitTestsInputs')->find(intVal($data['iO']));
-                $this->entityManager->remove($databaseInput);
+                for ($i = 0; $i < count($data['iO']); $i++) {
+                    $databaseInput = $this->entityManager->getRepository(UnitTestsInputs::class)->find(intVal($data['iO'][$i]));
+                    if($databaseInput){
+                        $this->entityManager->remove($databaseInput);
+                    }
+                }
                 $this->entityManager->flush();
             }
         );
