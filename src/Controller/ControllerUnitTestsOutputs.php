@@ -19,27 +19,34 @@ class ControllerUnitTestsOutputs extends Controller
                     ->findBy(array("unitTest" => $testSynchronized));
             },
             "update" => function ($data) {
+                $idTabToReturn = [];
+                for ($i = 0; $i < count($data['iO']); $i++) {
+                    $output = UnitTestsOutputs::jsonDeserialize($data['iO'][$i]);
+                    $output->setUnitTest(UnitTests::jsonDeserialize(json_decode($output->getUnitTest())));
+                    $databaseOutput = $this->entityManager->getRepository('Interfaces\Entity\UnitTestsOutputs')->find($output->getId());
+                    if ($databaseOutput === null) {
+                        $test = $this->entityManager->getRepository('Interfaces\Entity\UnitTests')
+                            ->find(intval($output->getUnitTest()->getId()));
+                        $output->setUnitTest($test);
+                    } else {
+                        $databaseOutput->copy($output);
+                        $output = $databaseOutput;
+                    }
 
-                $input = UnitTestsOutputs::jsonDeserialize($data['iO']);
-                $input->setUnitTest(UnitTests::jsonDeserialize(json_decode($input->getUnitTest())));
-                $databaseInput = $this->entityManager->getRepository('Interfaces\Entity\UnitTestsOutputs')->find($input->getId());
-                if ($databaseInput === null) {
-                    $test = $this->entityManager->getRepository('Interfaces\Entity\UnitTests')
-                        ->find(intval($input->getUnitTest()->getId()));
-                    $input->setUnitTest($test);
-                } else {
-                    $databaseInput->copy($input);
-                    $input = $databaseInput;
+                    $this->entityManager->persist($output);
+                    $this->entityManager->flush();
+                    $idTabToReturn[$i] = $output;
+
                 }
-
-                $this->entityManager->persist($input);
-                $this->entityManager->flush();
-
-                return $input;
+                return $idTabToReturn;
             },
             "delete" => function ($data) {
-                $databaseInput = $this->entityManager->getRepository('Interfaces\Entity\UnitTestsOutputs')->find($data['iO']);
-                $this->entityManager->remove($databaseInput);
+                for ($i = 0; $i < count($data['iO']); $i++) {
+                    $databaseOutput = $this->entityManager->getRepository(UnitTestsOutputs::class)->find($data['iO'][$i]);
+                    if($databaseOutput){
+                        $this->entityManager->remove($databaseOutput);
+                    }
+                }
                 $this->entityManager->flush();
             }
         );
