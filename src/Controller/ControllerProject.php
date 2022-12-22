@@ -638,6 +638,39 @@ class ControllerProject extends Controller
                 return $projectFound;
                 
             },
+            'lti_student_reinitialize_project' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "ltiStudentReinitializeProjectNotRetrievedNotAuthenticated"];
+
+                // initialize empty errors array
+                $errors = [];
+                $teacherProjectLink = !empty($_POST['teacher_project_link']) ? htmlspecialchars(strip_tags(trim($_POST['teacher_project_link']))) : '';
+                $studentProjectLink = !empty($_POST['student_project_link']) ? htmlspecialchars(strip_tags(trim($_POST['student_project_link']))) : '';
+
+                if(empty($teacherProjectLink)) array_push($errors, array('errorType' => 'teacherProjectLinkInvalid'));
+                if(empty($studentProjectLink)) array_push($errors, array('errorType' => 'studentProjectLinkInvalid'));
+                if(!empty($errors)) return array('errors' => $errors);
+
+                // retrieve the project from db
+                $teacherProject = $this->entityManager->getRepository(Project::class)->findOneByLink($teacherProjectLink);
+                if(!$teacherProject)array_push($errors, array('errorType' => 'teacherProjectNotFound'));
+                
+                $studentProject = $this->entityManager->getRepository(Project::class)->findOneByLink($studentProjectLink);
+                if(!$studentProject)array_push($errors, array('errorType' => 'studentProjectNotFound'));
+
+                // some errors, return them
+                if(!empty($errors)) return array('errors' => $errors);
+
+                // update code and code text 
+                $studentProject->setCode($teacherProject->getCode());
+                $studentProject->setCodeText($teacherProject->getCodeText());
+
+                $this->entityManager->flush();
+                return $studentProject;
+            },
             'add_or_update_exercise_statement' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
