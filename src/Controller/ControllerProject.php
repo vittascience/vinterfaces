@@ -579,8 +579,8 @@ class ControllerProject extends Controller
                 // initialize empty errors array
                 $errors = [];
                 $projectLink = !empty($_POST['project_link']) ? htmlspecialchars(strip_tags(trim($_POST['project_link']))) : '';
-                $code = !empty($_POST['code']) ? htmlspecialchars(strip_tags(trim($_POST['code']))) : '';
-                $codeText = !empty($_POST['code_text']) ? htmlspecialchars(strip_tags(trim($_POST['code_text']))) : '';
+                $code = !empty($_POST['code']) ? trim($_POST['code']) : '';
+                $codeText = !empty($_POST['code_text']) ? trim($_POST['code_text']) : '';
 
                 if(empty($projectLink)){
                     array_push($errors, array('errorType' => 'projectLinkInvalid'));
@@ -634,7 +634,7 @@ class ControllerProject extends Controller
                     }
                      
                 }
-
+                $this->entityManager->flush();
                 return $projectFound;
                 
             },
