@@ -314,7 +314,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     public function setCode($code)
     {
         if (is_string($code)) {
-            $this->code = htmlspecialchars($code);
+            $this->code = $code;
         } else {
             throw new EntityDataIntegrityException("code needs to be string");
         }
