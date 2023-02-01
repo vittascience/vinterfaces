@@ -59,19 +59,19 @@ class ControllerProject extends Controller
                 return $project->getLink();
             },
             'add' => function ($data) {
-                $interface = htmlspecialchars(strip_tags(trim($_POST['interface'])));
-                $code = $interface == 'adacraft' ? $_POST['code'] : htmlspecialchars(strip_tags(trim($_POST['code'])));
+                /* $interface = htmlspecialchars(strip_tags(trim($_POST['interface'])));
+                $code = $interface == 'adacraft' ? $_POST['code'] : htmlspecialchars(strip_tags(trim($_POST['code']))); */
                 $user = $this->entityManager->getRepository('User\Entity\User')
                     ->findOneBy(array("id" => $this->user['id']));
                 $project = new Project($data['name'], $data['description']);
                 $project->setUser($user);
                 $project->setDateUpdated();
-                $project->setCode($code);
+                $project->setCode($data['code']);
                 $project->setCodeText($data['codeText']);
                 $project->setCodeManuallyModified($data['codeManuallyModified']);
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
-                $project->setInterface($interface);
+                $project->setInterface($data['interface']);
                 $project->setSharedStatus($data['sharedStatus'] ?? 0);
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
@@ -1359,9 +1359,9 @@ class ControllerProject extends Controller
     {
         $project = new \stdClass();
         $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
-        if($incomingProject->interface != "adacraft") {
+        /* if($incomingProject->interface != "adacraft") {
             $project->code = htmlspecialchars(strip_tags(trim($project->code)));
-        }
+        } */
         $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
         $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
         $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
