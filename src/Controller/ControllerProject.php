@@ -59,6 +59,8 @@ class ControllerProject extends Controller
                 return $project->getLink();
             },
             'add' => function ($data) {
+                /* $interface = htmlspecialchars(strip_tags(trim($_POST['interface'])));
+                $code = $interface == 'adacraft' ? $_POST['code'] : htmlspecialchars(strip_tags(trim($_POST['code']))); */
                 $user = $this->entityManager->getRepository('User\Entity\User')
                     ->findOneBy(array("id" => $this->user['id']));
                 $project = new Project($data['name'], $data['description']);
@@ -1357,6 +1359,9 @@ class ControllerProject extends Controller
     {
         $project = new \stdClass();
         $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
+        /* if($incomingProject->interface != "adacraft") {
+            $project->code = htmlspecialchars(strip_tags(trim($project->code)));
+        } */
         $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
         $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
         $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
