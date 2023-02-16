@@ -11,7 +11,7 @@ class ProjectRepository extends EntityRepository
     {
         $query = $this->getEntityManager()
             ->createQueryBuilder()
-            ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface")
+            ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface, p.mode")
             ->from(Project::class, 'p')
             ->where('(p.user = :user AND p.deleted = :deleted AND p.interface = :interface)')
             ->setParameters(['user' => $data['user'], 'deleted' => $data['deleted'], 'interface' => $data['interface']])
@@ -24,7 +24,7 @@ class ProjectRepository extends EntityRepository
     {
         $query = $this->getEntityManager()
             ->createQueryBuilder()
-            ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface")
+            ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface, p.mode")
             ->from(Project::class, 'p')
             ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
             ->setParameters(['public' => $data['public'], 'deleted' => $data['deleted'], 'interface' => $data['interface']])
