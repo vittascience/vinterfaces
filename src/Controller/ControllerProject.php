@@ -184,6 +184,7 @@ class ControllerProject extends Controller
                     $project->setName($sanitizedProject->name);
                     $project->setDescription($sanitizedProject->description);
                     $project->setCodeText($sanitizedProject->codeText);
+                    $project->setMode($sanitizedProject->code);
                     $project->setCodeManuallyModified($sanitizedProject->codeManuallyModified);
                     $project->setPublic($sanitizedProject->public);
                     $this->entityManager->persist($project);
@@ -1366,6 +1367,7 @@ class ControllerProject extends Controller
         $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
         $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
         $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
+        $project->mode = !empty($incomingProject->mode) ? htmlspecialchars(strip_tags(trim($incomingProject->mode))) : null;
         $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
         $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
         $project->link = !empty($incomingProject->link) ? htmlspecialchars(strip_tags(trim($incomingProject->link))) : '';
