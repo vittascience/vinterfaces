@@ -184,7 +184,7 @@ class ControllerProject extends Controller
                     $project->setName($sanitizedProject->name);
                     $project->setDescription($sanitizedProject->description);
                     $project->setCodeText($sanitizedProject->codeText);
-                    $project->setMode($sanitizedProject->code);
+                    $project->setMode($sanitizedProject->mode);
                     $project->setCodeManuallyModified($sanitizedProject->codeManuallyModified);
                     $project->setPublic($sanitizedProject->public);
                     $this->entityManager->persist($project);
