@@ -626,9 +626,8 @@ class ControllerProject extends Controller
                         $this->entityManager->remove($exercise);
                         $this->entityManager->flush();
                         
-                    }
-                    if($projectFound->getInterface() === "stm32"){
-                        $exercise = $this->entityManager->getRepository(ExercisePython::class)-> find($projectFound->getExercise()->getId());
+                    } else {
+                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
 
                         // update the project, then remove the exercise from python_exercise table
                         $projectFound->setIsExerciseCreator(false);
@@ -636,7 +635,6 @@ class ControllerProject extends Controller
                         $this->entityManager->remove($exercise);
                         $this->entityManager->flush();
                     }
-                     
                 }
                 $this->entityManager->flush();
                 return $projectFound;
