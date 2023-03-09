@@ -616,25 +616,13 @@ class ControllerProject extends Controller
                 }
 
                 if($projectFound->getIsExerciseCreator()){
-                    if($projectFound->getInterface() === "python"){
-                        
-                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
-                       
-                       // update the project, then remove the exercise from python_exercise
-                        $projectFound->setIsExerciseCreator(false); 
-                        $projectFound->setExercise(null);
-                        $this->entityManager->remove($exercise);
-                        $this->entityManager->flush();
-                        
-                    } else {
-                        $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
+                    $exercise = $this->entityManager->getRepository(ExercisePython::class)->find($projectFound->getExercise()->getId());
 
-                        // update the project, then remove the exercise from python_exercise table
+                        // update the project, then remove the exercise from python_exercise
                         $projectFound->setIsExerciseCreator(false);
                         $projectFound->setExercise(null);
                         $this->entityManager->remove($exercise);
                         $this->entityManager->flush();
-                    }
                 }
                 $this->entityManager->flush();
                 return $projectFound;
