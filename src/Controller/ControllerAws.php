@@ -182,9 +182,9 @@ class ControllerAws extends Controller
                     return ["auth" => false, "response" => "notLogged"];
                 }
                 // If the user is not from a whitelisted domaine, he need to be authenticated and premium or admin
-                if (!$this->isPremium && !$this->isAdmin && !$isExerciceWhitelist) {
-                    return ["auth" => false, "response" => "notPremium"];
-                }
+                //if (!$this->isPremium && !$this->isAdmin && !$isExerciceWhitelist) {
+                //    return ["auth" => false, "response" => "notPremium"];
+                //}
                 // We need a method to authenticated the user
                 if (!$this->user && !$accessKey) {
                     return ["auth" => false, "response" => "noCredentials"];
