@@ -68,7 +68,7 @@ class ControllerProject extends Controller
                 $project->setDateUpdated();
                 $project->setCode($data['code']);
                 $project->setCodeText($data['codeText']);
-                $project->setMode($data['mode']);
+                $project->setMode($data['mode'] ?? false);
                 $project->setCodeManuallyModified($data['codeManuallyModified']);
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
