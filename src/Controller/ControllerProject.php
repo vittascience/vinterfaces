@@ -1228,6 +1228,7 @@ class ControllerProject extends Controller
         $newProject->setPublic($project->isPublic());
         $newProject->setLink(uniqid());
         $newProject->setInterface($project->getInterface());
+        $newProject->setMode($project->getMode());
 
         return $newProject;
     }
