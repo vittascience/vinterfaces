@@ -560,7 +560,11 @@ class ControllerProject extends Controller
                     $ltiProject = new LtiProject();
                     $ltiProject->setUser($user);
                     $ltiProject->setUserProjectLink($projectLink);
-                    $ltiProject->setLtiResourceLinkId($mainProject->getInterface());
+                    $projectInterface = $mainProject->getInterface();
+                    if ($mainProject->getInterface() == 'ai') {
+                        $projectInterface = "ai-{$mainProject->getMode()}";
+                    }
+                    $ltiProject->setLtiResourceLinkId($projectInterface);
                     $ltiProject->setIsSubmitted(false);
                     if ($ltiCourseId) {
                         $ltiProject->setLtiCourseId($ltiCourseId);
