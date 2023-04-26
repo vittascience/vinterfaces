@@ -791,7 +791,7 @@ class ControllerProject extends Controller
                 $newSharedUser = $this->entityManager->getRepository(User::class)->find($sharedUserId);
                 if (!$sharedUserAlreadyShared) {
                     if ($newSharedUser) {
-                        $fullname = $newSharedUser->getFirstname() . ' ' . $newSharedUser->getLastname();
+                        $fullname = $newSharedUser->getFirstname() . ' ' . $newSharedUser->getSurname();
                     } else {
                         $fullname = $sharedUserId;
                     }
