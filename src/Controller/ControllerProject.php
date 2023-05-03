@@ -495,12 +495,41 @@ class ControllerProject extends Controller
                     'userProjectLink' => $projectLink
                 ));
 
-                // no project found with the provided id, return an error
-                if (!$ltiProjectFound)  return array('msg' => 'ltiProjectNotFound');
+                // no project found with the provided id, create it
+                if (!$ltiProjectFound) {
+                    $ltiCourseId = !empty($_POST['course_id']) ? $_POST['course_id'] : null;
+                    $userId = intval($_SESSION['id']);
+
+                    $projectFound = $this->entityManager->getRepository(Project::class)->findOneBy(array(
+                        'link' => $projectLink
+                    ));
+                    if (!$projectFound)  return array('msg' => 'projectNotFound');
+
+                    $user = $this->entityManager->getRepository(User::class)->find($userId);
+                    if (!$user)  return array('msg' => 'userNotFound');
+
+                    $ltiProject = new LtiProject();
+                    $ltiProject->setUser($user);
+                    $ltiProject->setUserProjectLink($projectLink);
+                    $projectInterface = $projectFound->getInterface();
+                    if ($projectFound->getInterface() == 'ai') {
+                        $projectInterface = "ai-{$projectFound->getMode()}";
+                    }
+                    $ltiProject->setLtiResourceLinkId($projectInterface);
+                    
+                    if ($ltiCourseId) $ltiProject->setLtiCourseId($ltiCourseId);
+
+                    $ltiProject->setIsSubmitted(true);
+                    $this->entityManager->persist($ltiProject);
+                    $this->entityManager->flush();
+                    return array(
+                        'success' => true,
+                        'id' => $ltiProject->getId()
+                    );
+                }
 
                 // project found, update and save it
                 $ltiProjectFound->setIsSubmitted(true);
-                $this->entityManager->persist($ltiProjectFound);
                 $this->entityManager->flush();
 
                 return array(
