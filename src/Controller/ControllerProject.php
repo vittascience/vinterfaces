@@ -504,7 +504,7 @@ class ControllerProject extends Controller
                         'link' => $projectLink
                     ));
                     if (!$projectFound)  return array('msg' => 'projectNotFound');
-                    
+
                     $user = $this->entityManager->getRepository(User::class)->find($userId);
                     if (!$user)  return array('msg' => 'userNotFound');
 
@@ -519,12 +519,12 @@ class ControllerProject extends Controller
                     
                     if ($ltiCourseId) $ltiProject->setLtiCourseId($ltiCourseId);
 
-                    $ltiProjectFound->setIsSubmitted(true);
+                    $ltiProject->setIsSubmitted(true);
                     $this->entityManager->persist($ltiProject);
                     $this->entityManager->flush();
                     return array(
                         'success' => true,
-                        'id' => $ltiProjectFound->getId()
+                        'id' => $ltiProject->getId()
                     );
                 }
 
