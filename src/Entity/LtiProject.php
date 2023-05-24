@@ -43,6 +43,11 @@ class LtiProject {
     private $ltiResourceLinkId = '';
 
     /**
+     * @ORM\Column(name="lti_target_link_uri", type="string", nullable="true")
+     */
+    private $ltiTargetLinkUri = '';
+
+    /**
      * @ORM\Column(name="is_submitted", type="boolean",nullable="false")
      */
     private $isSubmitted = false;
@@ -143,6 +148,29 @@ class LtiProject {
             throw new EntityDataIntegrityException("The resource link id has to be a string");
         }
         $this->ltiResourceLinkId = $ltiResourceLinkId;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of ltiTargetUri
+     */ 
+    public function getLtiTargetLinkUri()
+    {
+        return $this->ltiTargetLinkUri;
+    }
+
+    /**
+     * Set the value of ltiResourceLinkId
+     *
+     * @return  self
+     */ 
+    public function setLtiTargetLinkUri($ltiTargetLinkUri)
+    {
+        if(!is_string($ltiTargetLinkUri)){
+            throw new EntityDataIntegrityException("The target link uri has to be a string");
+        }
+        $this->ltiTargetLinkUri = $ltiTargetLinkUri;
 
         return $this;
     }
