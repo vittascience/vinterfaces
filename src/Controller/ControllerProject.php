@@ -341,9 +341,11 @@ class ControllerProject extends Controller
                 $ltiCourseId = !empty($_POST['course_id']) ? $_POST['course_id'] : null;
                 $ltiResourceLinkId = !empty($_POST['resource_link_id']) ? $_POST['resource_link_id'] : null;
                 $projectLink = !empty($_POST['link']) ? htmlspecialchars(strip_tags(trim($_POST['link']))) : '';
+                $targetLinkUri = !empty($_POST['target_link_uri']) ? $_POST['target_link_uri'] : null;
 
                 //if(empty($ltiCourseId)) $errors['ltiCourseIdInvalid'] = true;
                 if (empty($ltiResourceLinkId)) array_push($errors, array('errorType' => 'resourceLinkIdInvalid'));
+                if (empty($targetLinkUri)) array_push($errors, array('errorType' => 'targetLinkUriInvalid'));
                 if (empty($projectLink)) array_push($errors, array('errorType' => 'projectLinkInvalid'));
 
                 // some errors found, return them
@@ -370,6 +372,7 @@ class ControllerProject extends Controller
                 $queryParams = array(
                     'user' => $user->getId(),
                     'ltiResourceLinkId' => $ltiResourceLinkId,
+                    'ltiTargetLinkUri' => $targetLinkUri,
                     'isSubmitted' => 0
                 );
 
@@ -408,6 +411,7 @@ class ControllerProject extends Controller
                     $ltiProject->setUser($user);
                     $ltiProject->setUserProjectLink($projectDuplicated->getLink());
                     $ltiProject->setLtiResourceLinkId($ltiResourceLinkId);
+                    $ltiProject->setLtiTargetLinkUri($targetLinkUri);
                     $ltiProject->setIsSubmitted(false);
                     if ($ltiCourseId) {
                         $ltiProject->setLtiCourseId($ltiCourseId);
