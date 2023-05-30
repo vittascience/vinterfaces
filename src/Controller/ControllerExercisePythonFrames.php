@@ -50,8 +50,9 @@ class ControllerExercisePythonFrames extends Controller
                 $userId = intval($_SESSION['id']);
 
                 // get incoming frames
-                $incomingData = json_decode(file_get_contents('php://input'));
-                
+                // $incomingData = json_decode(file_get_contents('php://input'));
+                $incomingData = json_decode($_POST['frames']);
+
                 $exerciseId = !empty($incomingData->exerciseId) ? intval($incomingData->exerciseId) : 0;
 
                 // get the exercise from python_exercices table
@@ -81,7 +82,7 @@ class ControllerExercisePythonFrames extends Controller
                         'exerciceId' => $exerciseId,
                         'frame' => $frame,
                         'componentId' => $componentId,
-                        'value' => $value                        
+                        'value' => json_encode($value)                      
                     ));
 
                 }
@@ -100,8 +101,6 @@ class ControllerExercisePythonFrames extends Controller
                     $this->entityManager->flush();
                 }
 
-                
-
                 foreach($sanitizedFrames as $sanitizedFrame){
                     $exercise_frame = new ExercisePythonFrames();
                     $exercise_frame->setExercise($exercise);
@@ -114,7 +113,7 @@ class ControllerExercisePythonFrames extends Controller
                 // Save data to DB
                 
                 $this->entityManager->flush();
-                echo json_encode(array('msg' => "done"));
+                echo json_encode(array('msg' => "done", 'exercise' => $exercise_frame));
                 exit;
             }
         );
