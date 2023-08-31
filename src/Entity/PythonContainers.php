@@ -413,7 +413,7 @@ class PythonContainers implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         if ($this->getUser()) {
             $user = $this->getUser()->getId();

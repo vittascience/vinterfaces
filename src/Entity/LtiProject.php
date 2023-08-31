@@ -198,7 +198,8 @@ class LtiProject {
         return $this;
     }
 
-    public function jsonSerialize(){
+    public function jsonSerialize(): mixed
+    {
         return array(
             'id'=> $this->getId(),
             'user' => $this->getUser()->jsonSerialize(),

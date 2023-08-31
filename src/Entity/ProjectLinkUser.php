@@ -84,13 +84,7 @@ class ProjectLinkUser
         }
     }
 
-
-
-
-
-
-
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $user = $this->getUser();
         if ($user != null) {
