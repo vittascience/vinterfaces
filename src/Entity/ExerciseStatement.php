@@ -69,7 +69,7 @@ class ExerciseStatement implements \JsonSerializable
      *
      * @return  array  
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize()
     {
         return array(
             'id' => $this->getId(),

@@ -198,7 +198,7 @@ class LtiProject {
         return $this;
     }
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize()
     {
         return array(
             'id'=> $this->getId(),

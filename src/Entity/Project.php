@@ -618,7 +618,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize()
     {
         $user = $this->getUser();
         if ($user != null) {
