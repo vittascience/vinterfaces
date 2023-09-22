@@ -210,7 +210,7 @@ class LtiProjectTest extends TestCase{
     }
 
     /** dataProvider for testGetIdReturnsId */
-    public function provideFakeIds(){
+    public static function provideFakeIds(){
         return array(
             array(1),
             array('1'),
@@ -235,7 +235,7 @@ class LtiProjectTest extends TestCase{
     }
 
     /** dataProvider for testSetRejectNonObjectValues */
-    public function provideNonObjectValues(){
+    public static function provideNonObjectValues(){
         return array(
             array('1'),
             array(1),
@@ -244,7 +244,7 @@ class LtiProjectTest extends TestCase{
     }
 
     /** dataProvider for testSetUserAcceptsUserObjectValue */
-    public function provideUserObjectValues(){
+    public static function provideUserObjectValues(){
         $user1 = new User;
         $user1->setPseudo('user1');
         $user2 = new User;
@@ -265,7 +265,7 @@ class LtiProjectTest extends TestCase{
      * => testSetLtiCourseIdRejectNonStringValue
      * => testSetLtiResourceLinkIdRejectInvalidValue
      *  */
-    public function provideNonStringValues(){
+    public static function provideNonStringValues(){
         return array(
             array(3),
             array(new \stdClass),
@@ -275,7 +275,7 @@ class LtiProjectTest extends TestCase{
     }
 
     /** dataProvider for testGetClientIdAcceptsStringValue */
-    public function provideStringUserProjectLinks(){
+    public static function provideStringUserProjectLinks(){
         return array(
             array('6d30c1b5b7da5'),
             array('5d30c1b5b7da5'),
@@ -288,7 +288,7 @@ class LtiProjectTest extends TestCase{
      * => testSetLtiCourseIdAcceptsValidValue 
      * => testSetLtiResourceLinkIdAcceptsStringValue
      * */
-    public function provideStringIds(){
+    public static function provideStringIds(){
         return array(
             array('3'),
             array('1000'),
@@ -301,7 +301,7 @@ class LtiProjectTest extends TestCase{
      * => testGetIsSubmittedReturnsValue
      * => testSetIsSubmittedAcceptsValidValue
      */
-    public function provideBooleanValues(){
+    public static function provideBooleanValues(){
         return array(
             array(true),
             array(false),
@@ -309,7 +309,7 @@ class LtiProjectTest extends TestCase{
     }
 
     /** dataProvider for testSetIsSubmittedRejectsInvalidValue */
-    public function provideNonBooleanValues(){
+    public static function provideNonBooleanValues(){
         return array(
             array(3),
             array(new \stdClass),
