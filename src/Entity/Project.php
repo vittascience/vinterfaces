@@ -136,6 +136,13 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
 
 
     /**
+     * @ORM\Column(name="options", type="text", nullable=true)
+     * @var String
+     */
+    private $options;
+
+
+    /**
      * Project constructor
      * @param string $name
      * @param string $description
@@ -591,7 +598,29 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
+    /**
+     * Get the value of options
+     *
+     * @return  String
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
 
+    /**
+     * Set the value of options
+     *
+     * @param  String  $options
+     *
+     * @return  self
+     */
+    public function setOptions($options)
+    {
+        $this->options = $options;
+
+        return $this;
+    }
 
     public function copy($objectToCopyFrom)
     {
@@ -612,6 +641,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             $this->setInterface($objectToCopyFrom->getInterface());
             $this->setDeleted($objectToCopyFrom->isDeleted());
             $this->setActivitySolve($objectToCopyFrom->isActivitySolve());
+            $this->setOptions($objectToCopyFrom->getOptions());
         } else {
             throw new EntityOperatorException("ObjectToCopyFrom attribute needs to be an instance of Project");
         }
@@ -630,6 +660,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             $sharedUsers = json_encode($sharedUsers);
         } else {
             $sharedUsers = null;
+        }
+
+        $options = null;
+        if ($this->getOptions() != null) {
+            $options = json_decode($this->getOptions());
         }
 
         return [
@@ -651,6 +686,7 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             'isExerciseStatementCreator' => $this->getIsExerciseStatementCreator(),
             'sharedUsers' => $sharedUsers,
             'sharedStatus' => $this->getSharedStatus(),
+            'options' => $options
         ];
     }
 
