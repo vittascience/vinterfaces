@@ -54,7 +54,7 @@ class ControllerProject extends Controller
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
                 $project->setInterface($data['interface']);
-                if (property_exists($data,'options')) {
+                if (array_key_exists('options', $data)) {
                     $project->setOptions($data['options']);
                 }
                 $this->entityManager->persist($project);
@@ -80,7 +80,7 @@ class ControllerProject extends Controller
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
                 }
-                if (property_exists($data,'options')) {
+                if (array_key_exists('options', $data)) {
                     $project->setOptions($data['options']);
                 }
                 $this->entityManager->persist($project);
