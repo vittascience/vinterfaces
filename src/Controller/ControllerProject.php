@@ -54,6 +54,9 @@ class ControllerProject extends Controller
                 $project->setPublic($data['public']);
                 $project->setLink(uniqid());
                 $project->setInterface($data['interface']);
+                if (array_key_exists('options', $data)) {
+                    $project->setOptions($data['options']);
+                }
                 $this->entityManager->persist($project);
                 $this->entityManager->flush();
                 return $project->getLink();
@@ -76,6 +79,9 @@ class ControllerProject extends Controller
                 $project->setSharedStatus($data['sharedStatus'] ?? 0);
                 if (isset($data['activitySolve'])) {
                     $project->setActivitySolve(true);
+                }
+                if (array_key_exists('options', $data)) {
+                    $project->setOptions($data['options']);
                 }
                 $this->entityManager->persist($project);
                 $this->entityManager->flush();
@@ -186,6 +192,9 @@ class ControllerProject extends Controller
                     $project->setMode($sanitizedProject->mode);
                     $project->setCodeManuallyModified($sanitizedProject->codeManuallyModified);
                     $project->setPublic($sanitizedProject->public);
+                    if (property_exists($sanitizedProject, 'options')) {
+                        $project->setOptions(json_encode($sanitizedProject->options));
+                    }
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
                     return $project;
@@ -1263,6 +1272,7 @@ class ControllerProject extends Controller
         $newProject->setLink(uniqid());
         $newProject->setInterface($project->getInterface());
         $newProject->setMode($project->getMode());
+        $newProject->setOptions($project->getOptions());
 
         return $newProject;
     }
@@ -1392,6 +1402,10 @@ class ControllerProject extends Controller
         $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
         $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
         $project->link = !empty($incomingProject->link) ? htmlspecialchars(strip_tags(trim($incomingProject->link))) : '';
+        foreach ($incomingProject->options as $option => $value) {
+           $option = htmlspecialchars(strip_tags(trim($value)));
+        }
+        $project->options = $incomingProject->options;
         return $project;
     }
 
