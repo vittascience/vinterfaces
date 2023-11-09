@@ -193,7 +193,7 @@ class ControllerProject extends Controller
                     $project->setCodeManuallyModified($sanitizedProject->codeManuallyModified);
                     $project->setPublic($sanitizedProject->public);
                     if (property_exists($sanitizedProject, 'options')) {
-                        $project->setOptions($data['options']);
+                        $project->setOptions(json_encode($sanitizedProject->options));
                     }
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
@@ -1402,7 +1402,10 @@ class ControllerProject extends Controller
         $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
         $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
         $project->link = !empty($incomingProject->link) ? htmlspecialchars(strip_tags(trim($incomingProject->link))) : '';
-        $project->options = !empty($incomingProject->options) ? htmlspecialchars(strip_tags(trim($incomingProject->options))) : null;
+        foreach ($incomingProject->options as $option => $value) {
+           $option = htmlspecialchars(strip_tags(trim($value)));
+        }
+        $project->options = $incomingProject->options;
         return $project;
     }
 
