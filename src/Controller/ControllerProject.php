@@ -18,6 +18,7 @@ use Interfaces\Entity\UnitTestsOutputs;
 use Interfaces\Entity\ExerciseStatement;
 use Interfaces\Entity\ExercisePythonFrames;
 use Utils\Mailer;
+use Utils\Traits\UtilsAssetsTrait;
 
 class ControllerProject extends Controller
 {
@@ -1215,7 +1216,11 @@ class ControllerProject extends Controller
             array_push($arrayKeys, $fileKeys);
         }
         if (!empty($arrayKeys)) {
-            $sessionId = session_id();
+            $response = UtilsAssetsTrait::duplicateAssets($this->entityManager);
+
+
+
+/*             $sessionId = session_id();
             session_write_close();
             $cookie = new SetCookie();
             $cookie->setName('PHPSESSID');
@@ -1239,7 +1244,7 @@ class ControllerProject extends Controller
                 ],
                 'cookies' => $cookieJar
             ]);
-            session_start();
+            session_start(); */
             $decodedResponse = json_decode($response->getBody()->getContents());
             if ($decodedResponse->success == true) {
                 if (is_array($decodedResponse->assets) && count($decodedResponse->assets) > 0) {
