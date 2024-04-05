@@ -1216,39 +1216,10 @@ class ControllerProject extends Controller
             array_push($arrayKeys, $fileKeys);
         }
         if (!empty($arrayKeys)) {
-            $response = UtilsAssetsTrait::duplicateAssets($this->entityManager);
-
-
-
-/*             $sessionId = session_id();
-            session_write_close();
-            $cookie = new SetCookie();
-            $cookie->setName('PHPSESSID');
-            $cookie->setValue($sessionId);
-            $cookie->setDomain($_SERVER["HTTP_HOST"]);
-            $cookieJar = new CookieJar(
-                false,
-                array(
-                    $cookie
-                )
-            );
-            $client = new Client();
-
-            // work around to detect https scheme (http for local else https prod and test servers)
-            $parts = explode('.', $_SERVER['HTTP_HOST']);
-            $scheme = count($parts) > 1 ? 'https' : 'http';
-
-            $response = $client->request('POST', "$scheme://{$_SERVER["HTTP_HOST"]}/routing/Routing.php?controller=cloud&action=duplicate-assets", [
-                'form_params' => [
-                    'keys' => $arrayKeys
-                ],
-                'cookies' => $cookieJar
-            ]);
-            session_start(); */
-            $decodedResponse = json_decode($response->getBody()->getContents());
-            if ($decodedResponse->success == true) {
-                if (is_array($decodedResponse->assets) && count($decodedResponse->assets) > 0) {
-                    $newKey = explode('-', $decodedResponse->assets[0]->to)[0];
+            $response = UtilsAssetsTrait::duplicateAssets($this->entityManager, $arrayKeys);
+            if ($response['success'] == true) {
+                if (is_array($response['assets']) && count($response['assets']) > 0) {
+                    $newKey = explode('-', $response['assets'][0]['to'])[0];
                     if (!empty($trainingDataKeys)) {
                         $projectCode->trainingDataKeys = $newKey;
                     }
