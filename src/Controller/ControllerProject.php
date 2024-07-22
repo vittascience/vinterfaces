@@ -1100,12 +1100,12 @@ class ControllerProject extends Controller
                 //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
-                
+                $userId = isset($_SESSION['id']) ? $_SESSION['id'] : 'anonymous';
                 $kid = "rtc";
 
                 $jwtClaims = [
                     "iss" => $iss,
-                    "sub" => 'anonymous',
+                    "sub" => $userId,
                     "aud" => "rtc",
                     "link" => $link,
                     "exp" => time() + 7200,
