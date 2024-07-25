@@ -1101,6 +1101,7 @@ class ControllerProject extends Controller
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
                 $privateKey = file_get_contents(__DIR__ . "/../../../../../temporaryKeys/rtcPrivateKey.pem");
                 $userId = isset($_SESSION['id']) ? $_SESSION['id'] : 'anonymous';
+                $userIp = $this->returnIpAddress();
                 $kid = "rtc";
 
                 $jwtClaims = [
@@ -1109,7 +1110,8 @@ class ControllerProject extends Controller
                     "aud" => "rtc",
                     "link" => $link,
                     "exp" => time() + 7200,
-                    "iat" => time()
+                    "iat" => time(),
+                    "ip" => $userIp
                 ];
 
                 $token = JWT::encode(
@@ -1368,9 +1370,6 @@ class ControllerProject extends Controller
     {
         $project = new \stdClass();
         $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
-        /* if($incomingProject->interface != "adacraft") {
-            $project->code = htmlspecialchars(strip_tags(trim($project->code)));
-        } */
         $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
         $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
         $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
@@ -1396,12 +1395,6 @@ class ControllerProject extends Controller
         if (empty($project->name)) {
             $errors[] = ['errorType' => 'missingName'];
         }
-        /* if (empty($project->description)) {
-            $errors[] = ['errorType'=>'missingDescription'];
-        }
-        if (empty($project->codeText)) {
-            $errors[] = ['errorType'=>'missingCodeText'];
-        } */
         if (!is_bool($project->codeManuallyModified) ) {
             $errors[] = ['errorType'=>'codeManuallyModifiedNotBoolean'];
         }
@@ -1414,107 +1407,18 @@ class ControllerProject extends Controller
         return $errors;
     }
 
+    private function returnIpAddress() {
+        $ip = null;
+        if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+            $ip = $_SERVER['HTTP_X_REAL_IP'];
+        } else if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
 
-    /*             
-    @toBeRemoved useless functions 26/10/2022
-    'get_shared_link_for_project' => function () {
-                // accept only POST request
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-                // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
-                // bind and sanitize data
-                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-
-                // check for errors
-                $errors = [];
-                if (empty($projectId)) {
-                    array_push($errors, array('errorType' => 'projectIdInvalid'));
-                }
-
-                // some errors found, return them
-                if (!empty($errors)) return array('errors' => $errors);
-                // no errors, get the user and project from interfaces_projects
-                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId,'user' => $user]);
-
-                if (!$projectExists) {
-                    array_push($errors, array('errorType' => 'projectNotFound'));
-                    return array('errors' => $errors);
-                }
-
-                if (!$projectExists->getSharedLink()) {
-                    $sharedLink = md5(uniqid());
-                    $projectExists->setSharedLink($sharedLink);
-                    $this->entityManager->flush();
-                } else {
-                    $sharedLink = $projectExists->getSharedLink();
-                }
-
-                return ['success' => true, 'shared_link' => $sharedLink];
-            }, */
-    /*             'add_shared_user_from_link' => function() {
-                // accept only POST request
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-                // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
-                // bind and sanitize data
-
-                $projectId = !empty($_POST['project_id']) ? intval($_POST['project_id']) : null;
-                $link = !empty($_POST['shared_link']) ? $_POST['shared_link'] : null;
-
-                // check for errors
-                $errors = [];
-                if (empty($projectId)) {
-                    array_push($errors, array('errorType' => 'projectIdInvalid'));
-                }
-
-                // some errors found, return them
-                if (!empty($errors)) return array('errors' => $errors);
-
-                // no errors, get the user and project from interfaces_projects
-                $projectExists = $this->entityManager->getRepository(Project::class)->findOneBy(['id' => $projectId]);
-                if (!$projectExists) {
-                    array_push($errors, array('errorType' => 'projectNotFound'));
-                    return array('errors' => $errors);
-                }
-
-                $sharedLink = $projectExists->getSharedLinks();
-                if (!$sharedLink) {
-                    array_push($errors, array('errorType' => 'sharedLinkInvalid'));
-                    return array('errors' => $errors);
-                }
-
-                $right = null;
-                if ($sharedLink == $link) {
-                    $right = $projectExists->getSharedStatus();
-                }
-
-                if (!$right) {
-                    array_push($errors, array('errorType' => 'sharedLinkInvalid'));
-                    return  ['errors' => $errors];
-                }
-
-                $sharedUsers = $projectExists->getSharedUsers();
-                if ($sharedUsers) {
-                    $unserializedSharedUsers = @unserialize($sharedUsers);
-                    if (!$unserializedSharedUsers) {
-                        $unserializedSharedUsers = [];
-                    }
-                } else {
-                    $unserializedSharedUsers = [];
-                }
-
-                foreach ($sharedUsers as $user) {
-                    if ($user['userId'] == $_SESSION['id']) {
-                        array_push($errors, array('errorType' => 'userAlreadyShared'));
-                        return  ['errors' => $errors];
-                    }
-                }
-                array_push($unserializedSharedUsers, ['userId' => $_SESSION['id'], 'right' => $right]);
-                $projectExists->setSharedUsers(serialize($unserializedSharedUsers));
-                $this->entityManager->flush();
-
-                return ['success' => true];
-
-            } */
+        return $ip;
+    }
 }
