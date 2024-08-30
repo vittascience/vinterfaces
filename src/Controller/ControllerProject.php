@@ -1096,6 +1096,7 @@ class ControllerProject extends Controller
             },
             'get_signed_link'=> function(){
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                header("Access-Control-Allow-Origin: *");
                 $link = !empty($_POST['link']) ? $_POST['link'] : '';
                 //$project = $this->entityManager->getRepository(Project::class)->findOneBy(array("link" => $link));
                 $iss = "https://{$_SERVER['HTTP_HOST']}";
