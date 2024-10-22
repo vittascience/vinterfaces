@@ -63,30 +63,38 @@ class ControllerProject extends Controller
                 return $project->getLink();
             },
             'add' => function ($data) {
-                /* $interface = htmlspecialchars(strip_tags(trim($_POST['interface'])));
-                $code = $interface == 'adacraft' ? $_POST['code'] : htmlspecialchars(strip_tags(trim($_POST['code']))); */
-                $user = $this->entityManager->getRepository('User\Entity\User')
-                    ->findOneBy(array("id" => $this->user['id']));
-                $project = new Project($data['name'], $data['description']);
-                $project->setUser($user);
-                $project->setDateUpdated();
-                $project->setCode($data['code']);
-                $project->setCodeText($data['codeText']);
-                $project->setMode($data['mode'] ?? false);
-                $project->setCodeManuallyModified($data['codeManuallyModified']);
-                $project->setPublic($data['public']);
-                $project->setLink(uniqid());
-                $project->setInterface($data['interface']);
-                $project->setSharedStatus($data['sharedStatus'] ?? 0);
-                if (isset($data['activitySolve'])) {
-                    $project->setActivitySolve(true);
+                try {
+                    $nameSanitized = $data['name'] ? htmlspecialchars(strip_tags(trim($data['name']))) : null;
+                    $descriptionSanitized = $data['description'] ? htmlspecialchars(strip_tags(trim($data['description']))) : null;
+
+                    if (!$nameSanitized || !$descriptionSanitized) {
+                        return ['error' => 'missing_data'];
+                    }
+    
+                    $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $this->user['id']));
+                    $project = new Project($nameSanitized, $descriptionSanitized);
+                    $project->setUser($user);
+                    $project->setDateUpdated();
+                    $project->setCode($data['code']);
+                    $project->setCodeText($data['codeText']);
+                    $project->setMode($data['mode'] ?? false);
+                    $project->setCodeManuallyModified($data['codeManuallyModified']);
+                    $project->setPublic($data['public']);
+                    $project->setLink(uniqid());
+                    $project->setInterface($data['interface']);
+                    $project->setSharedStatus($data['sharedStatus'] ?? 0);
+                    if (isset($data['activitySolve'])) {
+                        $project->setActivitySolve(true);
+                    }
+                    if (array_key_exists('options', $data)) {
+                        $project->setOptions($data['options']);
+                    }
+                    $this->entityManager->persist($project);
+                    $this->entityManager->flush();
+                    return $project;
+                } catch (\Exception $e) {
+                    return ['error' => $e->getMessage()];
                 }
-                if (array_key_exists('options', $data)) {
-                    $project->setOptions($data['options']);
-                }
-                $this->entityManager->persist($project);
-                $this->entityManager->flush();
-                return $project; //synchronized
             },
             'update_my_project' => function ($data) {
 
