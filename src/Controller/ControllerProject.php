@@ -67,7 +67,7 @@ class ControllerProject extends Controller
                     $nameSanitized = $data['name'] ? htmlspecialchars(strip_tags(trim($data['name']))) : null;
                     $descriptionSanitized = $data['description'] ? htmlspecialchars(strip_tags(trim($data['description']))) : null;
 
-                    if (!$nameSanitized || !$descriptionSanitized) {
+                    if (!$nameSanitized) {
                         return ['error' => 'missing_data'];
                     }
     
