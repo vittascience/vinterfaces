@@ -64,8 +64,8 @@ class ControllerProject extends Controller
             },
             'add' => function ($data) {
                 try {
-                    $nameSanitized = $data['name'] ? htmlspecialchars(strip_tags(trim($data['name']))) : null;
-                    $descriptionSanitized = $data['description'] ? htmlspecialchars(strip_tags(trim($data['description']))) : null;
+                    $nameSanitized = $data['name'] ? htmlspecialchars($data['name']) : null;
+                    $descriptionSanitized = $data['description'] ? htmlspecialchars($data['description']) : null;
 
                     if (!$nameSanitized) {
                         return ['error' => 'missing_data'];
@@ -1379,13 +1379,13 @@ class ControllerProject extends Controller
     {
         $project = new \stdClass();
         $project->code = !empty($incomingProject->code) ? $incomingProject->code : null;
-        $project->name = !empty($incomingProject->name) ? htmlspecialchars(strip_tags(trim($incomingProject->name))) : null;
-        $project->description = !empty($incomingProject->description) ? htmlspecialchars(strip_tags(trim($incomingProject->description))) : null;
+        $project->name = !empty($incomingProject->name) ? htmlspecialchars($incomingProject->name) : null;
+        $project->description = !empty($incomingProject->description) ? htmlspecialchars($incomingProject->description) : null;
         $project->codeText = !empty($incomingProject->codeText) ? $incomingProject->codeText : null;
         $project->mode = !empty($incomingProject->mode) ? htmlspecialchars(strip_tags(trim($incomingProject->mode))) : null;
         $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
         $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
-        $project->link = !empty($incomingProject->link) ? htmlspecialchars(strip_tags(trim($incomingProject->link))) : '';
+        $project->link = !empty($incomingProject->link) ? htmlspecialchars($incomingProject->link) : '';
         if (isset($incomingProject->options)) {
             foreach ($incomingProject->options as $option => $value) {
                 $option = htmlspecialchars(strip_tags(trim($value)));
