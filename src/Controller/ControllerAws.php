@@ -21,6 +21,11 @@ class ControllerAws extends Controller
     protected $isAdmin;
     protected $idPremium;
     protected $WhiteList;
+    protected $user;
+    protected $isPremium;
+    protected $clientEc2;
+    protected $clientElb;
+    protected $whiteListedRule;
 
     public function __construct($entityManager, $user)
     {
@@ -57,7 +62,7 @@ class ControllerAws extends Controller
         ]);
                     
                     
-        $this->user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => intval($_SESSION["id"])]) ?? null;
+        $this->user = null;
         $this->whiteListedRule = "arn:aws:elasticloadbalancing:eu-west-3:342829420373:listener-rule/app/VittascienceALB/d5218bfa7cdf4cd7/280e909132d6a679/7ad2e27090004e69";
         $this->WhiteList = $this->entityManager->getRepository(PythonWhitelist::class)->findAll();
 
@@ -65,6 +70,7 @@ class ControllerAws extends Controller
             $currentUserId = intval($_SESSION["id"]);
             $this->isPremium = RegularDAO::getSharedInstance()->isTester($currentUserId);
             $this->isAdmin = RegularDAO::getSharedInstance()->isAdmin($currentUserId);
+            $this->user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => intval($_SESSION["id"])]) ?? null;
         } else {
             $this->isPremium = false;
             $this->isAdmin = false;
