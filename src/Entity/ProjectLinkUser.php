@@ -4,45 +4,30 @@ namespace Interfaces\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ProjectLinkUserRepository")
- * @ORM\Table(name="interfaces_projects_link_users")
- */
+
+#[ORM\Entity(repositoryClass: Interfaces\Repository\ProjectLinkUserRepository::class)]
+#[ORM\Table(name: "interfaces_projects_link_users")]
 class ProjectLinkUser
 {
 
-
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: "user", referencedColumnName: "id", onDelete: "CASCADE")]
     private $user;
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\Project")
-     * @ORM\JoinColumn(name="project", referencedColumnName="id", onDelete="CASCADE")
-     * @var Project
-     */
+
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Project::class)]
+    #[ORM\JoinColumn(name: "project", referencedColumnName: "id", onDelete: "CASCADE")]
     private $project;
 
-
-    /**
-     * Project constructor
-     * @param string $name
-     * @param string $description
-     */
     public function __construct(User $user, Project $project)
     {
         $this->setUser($user);
         $this->setProject($project);
     }
-
 
     /**
      * @return User

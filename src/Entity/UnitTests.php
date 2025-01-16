@@ -7,67 +7,43 @@ use Utils\MetaDataMatcher;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\UnitTestsRepository")
- * @ORM\Table(name="python_tests")
- */
+#[ORM\Entity(repositoryClass: "Interfaces\Repository\UnitTestsRepository")]
+#[ORM\Table(name: "python_tests")]
 class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: "integer")]
+    #[ORM\GeneratedValue]
     private $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython")
-     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id", onDelete="CASCADE")
-     * @var ExercisePython
-     */
+    #[ORM\ManyToOne(targetEntity: "Interfaces\Entity\ExercisePython")]
+    #[ORM\JoinColumn(name: "id_exercise", referencedColumnName: "id", onDelete: "CASCADE")]
     private $exercise;
-    /**
-     * @ORM\Column(name="hint", type="string", length=240, nullable=true)
-     * @var string
-     */
-    private $hint =  null;
 
-    /**
-     * @return integer
-     */
-    public function getId()
+    #[ORM\Column(name: "hint", type: "string", length: 240, nullable: true)]
+    private $hint = null;
+
+    public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * @return ExercisePython
-     */
-    public function getExercise()
+    public function getExercise(): ExercisePython
     {
         return $this->exercise;
     }
 
-    /**
-     * @return string
-     */
-    public function getHint()
+    public function getHint(): ?string
     {
         return $this->hint;
     }
 
-    /**
-     * @param int $id
-     */
-    public function setId($id)
+    public function setId(int $id): void
     {
         $this->id = $id;
     }
 
-    /**
-     * @param ExercisePython $exercise
-     */
-    public function setExercise($exercise)
+    public function setExercise(ExercisePython $exercise): void
     {
         if ($exercise instanceof ExercisePython) {
             $this->exercise = $exercise;
@@ -76,10 +52,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @param string $hint
-     */
-    public function setHint($hint)
+    public function setHint(?string $hint): void
     {
         if (is_string($hint)) {
             $this->hint = $hint;
@@ -88,8 +61,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-
-    public function copy($objectToCopyFrom)
+    public function copy($objectToCopyFrom): void
     {
         if ($objectToCopyFrom instanceof self) {
             $this->hint = urldecode($objectToCopyFrom->hint);
@@ -98,7 +70,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'id' => $this->getId(),
@@ -107,7 +79,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         ];
     }
 
-    public static function jsonDeserialize($jsonDecoded)
+    public static function jsonDeserialize($jsonDecoded): self
     {
         $classInstance = new self();
         foreach ($jsonDecoded as $attributeName => $attributeValue) {

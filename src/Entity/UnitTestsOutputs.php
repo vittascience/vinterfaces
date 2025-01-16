@@ -7,68 +7,43 @@ use Utils\MetaDataMatcher;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\UnitTestsOutputsRepository")
- * @ORM\Table(name="python_tests_outputs")
- */
+#[ORM\Entity(repositoryClass: "Interfaces\Repository\UnitTestsOutputsRepository")]
+#[ORM\Table(name: "python_tests_outputs")]
 class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: "integer")]
+    #[ORM\GeneratedValue]
     private $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\UnitTests")
-     * @ORM\JoinColumn(name="id_unittest", referencedColumnName="id", onDelete="CASCADE")
-     * @var UnitTests
-     */
+    #[ORM\ManyToOne(targetEntity: "Interfaces\Entity\UnitTests", cascade: ["remove"])]
+    #[ORM\JoinColumn(name: "id_unittest", referencedColumnName: "id", onDelete: "CASCADE")]
     private $unitTest;
 
-    /**
-     * @ORM\Column(name="value", type="string", length=1000, nullable=true)
-     * @var string
-     */
+    #[ORM\Column(name: "value", type: "string", length: 1000, nullable: true)]
     private $value = null;
 
-    /**
-     * @return int
-     */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * @return UnitTests
-     */
-    public function getUnitTest()
+    public function getUnitTest(): UnitTests
     {
         return $this->unitTest;
     }
 
-    /**
-     * @return string
-     */
-    public function getValue()
+    public function getValue(): ?string
     {
         return $this->value;
     }
 
-    /**
-     * @param int $id
-     */
-    public function setId($id)
+    public function setId(int $id): void
     {
         $this->id = $id;
     }
 
-    /**
-     * @param UnitTests $unitTest
-     */
-    public function setUnitTest($unitTest)
+    public function setUnitTest(UnitTests $unitTest): void
     {
         if ($unitTest instanceof UnitTests) {
             $this->unitTest = $unitTest;
@@ -77,10 +52,7 @@ class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @param string $value
-     */
-    public function setValue($value)
+    public function setValue(?string $value): void
     {
         if (is_string($value) || $value === null) {
             $this->value = $value;
@@ -88,7 +60,8 @@ class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("value needs to be string");
         }
     }
-    public function copy($objectToCopyFrom)
+
+    public function copy($objectToCopyFrom): void
     {
         if ($objectToCopyFrom instanceof self) {
             $this->value = urldecode($objectToCopyFrom->value);
@@ -97,7 +70,7 @@ class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'id' => $this->getId(),
@@ -106,7 +79,7 @@ class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
         ];
     }
 
-    public static function jsonDeserialize($jsonDecoded)
+    public static function jsonDeserialize($jsonDecoded): self
     {
         $classInstance = new self();
         foreach ($jsonDecoded as $attributeName => $attributeValue) {

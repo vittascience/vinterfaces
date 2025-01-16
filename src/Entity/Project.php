@@ -9,161 +9,92 @@ use Interfaces\Entity\ExerciseStatement;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ProjectRepository")
- * @ORM\Table(name="interfaces_projects")
- */
+#[ORM\Entity(repositoryClass: "Interfaces\Repository\ProjectRepository")]
+#[ORM\Table(name: "interfaces_projects")]
 class Project implements \JsonSerializable, \Utils\JsonDeserializer
 {
     const REG_PROJECT_NAME = "/./";
     const REG_PROJECT_DESCRIPTION = "/./";
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: "integer")]
+    #[ORM\GeneratedValue]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-     */
+
+    #[ORM\ManyToOne(targetEntity: "User\Entity\User")]
+    #[ORM\JoinColumn(name: "user", referencedColumnName: "id", onDelete: "CASCADE")]
     private $user = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython",inversedBy="projects")
-     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
-     */
+    #[ORM\ManyToOne(targetEntity: "Interfaces\Entity\ExercisePython", inversedBy: "projects")]
+    #[ORM\JoinColumn(name: "id_exercise", referencedColumnName: "id")]
     private $exercise;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExerciseStatement", cascade={"persist","remove"})
-     * @ORM\JoinColumn(name="exercise_statement_id", referencedColumnName="id")
-     */
+    #[ORM\ManyToOne(targetEntity: "Interfaces\Entity\ExerciseStatement", cascade: ["persist", "remove"])]
+    #[ORM\JoinColumn(name: "exercise_statement_id", referencedColumnName: "id")]
     private $exerciseStatement;
 
-    /**
-     * @ORM\Column(name="project_name", type="string", length=100, nullable=false, options={"default":"Unamed"})
-     * @var string
-     */
+    #[ORM\Column(name: "project_name", type: "string", length: 100, nullable: false, options: ["default" => "Unamed"])]
     private $name = "Unamed";
 
-    /**
-     * @ORM\Column(name="interface", type="string", length=50, nullable=false)
-     * @var string
-     */
+    #[ORM\Column(name: "interface", type: "string", length: 50, nullable: false)]
     private $interface;
-    /**
-     * @ORM\Column(name="project_description", type="string", length=1000, nullable=true, options={"default":"No description"})
-     * @var string
-     */
+
+    #[ORM\Column(name: "project_description", type: "string", length: 1000, nullable: true, options: ["default" => "No description"])]
     private $description = "No description";
-    /**
-     * @ORM\Column(name="date_updated", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-     * @var \DateTime
-     */
+
+    #[ORM\Column(name: "date_updated", type: "datetime", columnDefinition: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")]
     private $dateUpdated;
-    /**
-     * @ORM\Column(name="code", type="string", length=16777215, nullable=false)
-     * @var string
-     */
+
+    #[ORM\Column(name: "code", type: "string", length: 16777215, nullable: false)]
     private $code = "";
-    /**
-     * @ORM\Column(name="code_language", type="string", length=16777215, nullable=true)
-     * @var string
-     */
+
+    #[ORM\Column(name: "code_language", type: "string", length: 16777215, nullable: true)]
     private $codeText = "";
-    /**
-     * @ORM\Column(name="manually_modified", type="boolean", nullable=false)
-     * @var bool
-     */
+
+    #[ORM\Column(name: "manually_modified", type: "boolean", nullable: false)]
     private $codeManuallyModified = false;
-    /**
-     * @ORM\Column(name="is_public", type="boolean", nullable=false, options={"default":false})
-     * @var bool
-     */
+
+    #[ORM\Column(name: "is_public", type: "boolean", nullable: false, options: ["default" => false])]
     private $public = false;
-    /**
-     * @ORM\Column(name="link", type="string", length=255, unique=true, nullable=false)
-     * @var string
-     */
+
+    #[ORM\Column(name: "link", type: "string", length: 255, unique: true, nullable: false)]
     private $link = null;
-    /**
-     * @ORM\Column(name="mode", type="string", length=20, nullable=true)
-     * @var string
-     */
+
+    #[ORM\Column(name: "mode", type: "string", length: 20, nullable: true)]
     private $mode = null;
-    /**
-     * @ORM\Column(name="is_deleted", type="boolean", nullable=false, options={"default":false})
-     * @var bool
-     */
+
+    #[ORM\Column(name: "is_deleted", type: "boolean", nullable: false, options: ["default" => false])]
     private $deleted = false;
 
-    /**
-     * @ORM\Column(name="is_activity_solve", type="boolean", nullable=false, options={"default":false})
-     * @var bool
-     */
+    #[ORM\Column(name: "is_activity_solve", type: "boolean", nullable: false, options: ["default" => false])]
     private $activitySolve = false;
 
-    /**
-     * @ORM\Column(name="is_exercise_creator", type="boolean", nullable=false, options={"default":false})
-     *
-     * @var bool
-     */
+    #[ORM\Column(name: "is_exercise_creator", type: "boolean", nullable: false, options: ["default" => false])]
     private $isExerciseCreator = false;
 
-    /**
-     * @ORM\Column(name="is_exercise_statement_creator", type="boolean", nullable=false, options={"default":false})
-     *
-     * @var bool
-     */
+    #[ORM\Column(name: "is_exercise_statement_creator", type: "boolean", nullable: false, options: ["default" => false])]
     private $isExerciseStatementCreator = false;
 
-    /**
-     * @ORM\Column(name="shared_users", type="text", nullable=true)
-     *
-     * @var string
-     */
+    #[ORM\Column(name: "shared_users", type: "text", nullable: true)]
     private $sharedUsers;
 
-    /**
-     * @ORM\Column(name="shared_status", type="integer", nullable=false, options={"default":0})
-     *
-     * @var string
-     */
+    #[ORM\Column(name: "shared_status", type: "integer", nullable: false, options: ["default" => 0])]
     private $sharedStatus = 0;
 
-
-    /**
-     * @ORM\Column(name="options", type="text", nullable=true)
-     * @var String
-     */
+    #[ORM\Column(name: "options", type: "text", nullable: true)]
     private $options;
 
-
-    /**
-     * Project constructor
-     * @param string $name
-     * @param string $description
-     */
     public function __construct($name = 'Unamed', $description = 'No description')
     {
         $this->setName($name);
         $this->setDescription($description);
     }
 
-    /**
-     * @return integer
-     */
     public function getId()
     {
         return $this->id;
     }
 
-    /**
-     * @param int $id
-     */
     public function setId($id)
     {
         if (is_int($id) && $id > 0) {
@@ -173,17 +104,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @return User
-     */
     public function getUser()
     {
         return $this->user;
     }
 
-    /**
-     * @param User $user
-     */
     public function setUser($user)
     {
         if ($user instanceof User || $user == null) {
@@ -193,37 +118,22 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * Get the value of exercise
-     */
     public function getExercise()
     {
         return $this->exercise;
     }
 
-    /**
-     * Set the value of exercise
-     *
-     * @return  self
-     */
     public function setExercise($exercise)
     {
         $this->exercise = $exercise;
-
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getName()
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
     public function setName($name)
     {
         if (preg_match(self::REG_PROJECT_NAME, $this->name)) {
@@ -232,69 +142,42 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("Error while setting name: name does not match regex.");
         }
     }
-    /**
-     * @return string
-     */
+
     public function getMode()
     {
         return $this->mode;
     }
 
-    /**
-     * @param string $name
-     */
     public function setMode($mode)
     {
         $this->mode = $mode;
     }
 
-    /**
-     * @return string
-     */
     public function getInterface()
     {
         return $this->interface;
     }
 
-    /**
-     * @param string $interface
-     */
     public function setInterface($interface)
     {
         $this->interface = $interface;
     }
 
-    /**
-     * @return string
-     */
     public function getDescription()
     {
         return $this->description;
     }
 
-    /**
-     * @param string $description
-     */
     public function setDescription($description)
     {
-        /*  if (preg_match(self::REG_PROJECT_DESCRIPTION, $description)) { */
         $this->description = $description;
-        /*  } else {
-            throw new EntityDataIntegrityException("description needs to be string and between 1 and 1000 characters");
-        } */
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getDateUpdated()
     {
         return $this->dateUpdated;
     }
 
-    /**
-     * @param string $dateUpdated
-     */
     public function setDateUpdated($dateUpdated = null)
     {
         if ($dateUpdated == null) {
@@ -304,20 +187,14 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @return string
-     */
     public function getCode()
     {
-        if(str_starts_with($this->code, '&lt;') || str_starts_with($this->code, "{&quot;")){
-            return htmlspecialchars_decode($this->code) ;
+        if (str_starts_with($this->code, '&lt;') || str_starts_with($this->code, "{&quot;")) {
+            return htmlspecialchars_decode($this->code);
         }
         return $this->code;
     }
 
-    /**
-     * @param string $code
-     */
     public function setCode($code)
     {
         if (is_string($code)) {
@@ -327,17 +204,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @return string
-     */
     public function getCodeText()
     {
         return htmlspecialchars_decode($this->codeText);
     }
 
-    /**
-     * @param string $code_c
-     */
     public function setCodeText($codeText)
     {
         if ($codeText == '' || is_string($codeText)) {
@@ -347,17 +218,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @return bool
-     */
     public function isCManuallyModified()
     {
         return $this->codeManuallyModified;
     }
 
-    /**
-     * @param bool $codeManuallyModified
-     */
     public function setCodeManuallyModified($codeManuallyModified)
     {
         if ($codeManuallyModified === null) {
@@ -370,17 +235,12 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("codeManuallyModified needs to be a boolean");
         }
     }
-    /**
-     * @return bool
-     */
+
     public function isPublic()
     {
         return $this->public;
     }
 
-    /**
-     * @param bool $isPublic
-     */
     public function setPublic($isPublic)
     {
         if ($isPublic === null) {
@@ -394,17 +254,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * @return string
-     */
     public function getLink()
     {
         return $this->link;
     }
 
-    /**
-     * @param string $link
-     */
     public function setLink($link)
     {
         if ($link === null) {
@@ -417,20 +271,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-
-    /**
-     * isDeleted
-     *
-     * @return bool
-     */
     public function isDeleted()
     {
         return $this->deleted;
     }
 
-    /**
-     * @param  bool $deleted
-     */
     public function setDeleted($deleted)
     {
         if ($deleted === null) {
@@ -444,19 +289,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * isActivity
-     *
-     * @return bool
-     */
     public function isActivitySolve()
     {
         return $this->activitySolve;
     }
 
-    /**
-     * @param  bool $activitySolve
-     */
     public function setActivitySolve($activitySolve)
     {
         if ($activitySolve === null) {
@@ -470,23 +307,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    /**
-     * Get the value of isExerciseCreator
-     *
-     * @return  bool
-     */
     public function getIsExerciseCreator()
     {
         return $this->isExerciseCreator;
     }
 
-    /**
-     * Set the value of isExerciseCreator
-     *
-     * @param  bool  $isExerciseCreator
-     *
-     * @return  self
-     */
     public function setIsExerciseCreator($isExerciseCreator)
     {
         if (!is_bool($isExerciseCreator)) {
@@ -497,23 +322,11 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
-    /**
-     * Get the value of isExerciseStatementCreator
-     *
-     * @return  bool
-     */
     public function getIsExerciseStatementCreator()
     {
         return $this->isExerciseStatementCreator;
     }
 
-    /**
-     * Set the value of isExerciseStatementCreator
-     *
-     * @param  bool  $isExerciseStatementCreator
-     *
-     * @return  self
-     */
     public function setIsExerciseStatementCreator($isExerciseStatementCreator)
     {
         if (!is_bool($isExerciseStatementCreator)) {
@@ -524,101 +337,50 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
-    /**
-     * Get the value of exerciseStatement
-     *
-     * @return  
-     */
     public function getExerciseStatement()
     {
         return $this->exerciseStatement;
     }
 
-    /**
-     * Set the value of exerciseStatement
-     *
-     * @param  ExerciseStatement  $exerciseStatement
-     *
-     * @return  self
-     */
     public function setExerciseStatement($exerciseStatement)
     {
-        if ($exerciseStatement === null || $exerciseStatement instanceof ExerciseStatement ) {
+        if ($exerciseStatement === null || $exerciseStatement instanceof ExerciseStatement) {
             $this->exerciseStatement = $exerciseStatement;
             return $this;
         }
         throw new EntityDataIntegrityException("The exercise statement has to be an instance of ExerciseStatement class or null");
     }
 
-    /**
-     * Get the value of shared user
-     *
-     * @return  string
-     */
     public function getSharedUsers()
     {
         return $this->sharedUsers;
     }
 
-    /**
-     * Set the value of shared user
-     *
-     * @param  string  $sharedUser
-     *
-     * @return  self
-     */
     public function setSharedUsers($sharedUsers)
     {
         $this->sharedUsers = $sharedUsers;
-
         return $this;
     }
 
-    /**
-     * Get the value of shared link rights
-     *
-     * @return  int
-     */
     public function getSharedStatus()
     {
         return $this->sharedStatus;
     }
 
-    /**
-     * Set the value of shared link rights
-     *
-     * @param  int  $sharedStatus
-     *
-     * @return  self
-     */
     public function setSharedStatus($sharedStatus)
     {
         $this->sharedStatus = $sharedStatus;
-
         return $this;
     }
 
-    /**
-     * Get the value of options
-     *
-     * @return  String
-     */
     public function getOptions()
     {
         return $this->options;
     }
 
-    /**
-     * Set the value of options
-     *
-     * @param  String  $options
-     *
-     * @return  self
-     */
     public function setOptions($options)
     {
         $this->options = $options;
-
         return $this;
     }
 
@@ -646,7 +408,6 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityOperatorException("ObjectToCopyFrom attribute needs to be an instance of Project");
         }
     }
-
 
     public function jsonSerialize()
     {

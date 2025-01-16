@@ -9,41 +9,28 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Interfaces\Entity\Project;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ExercisePythonRepository")
- * @ORM\Table(name="python_exercises")
- */
+#[ORM\Entity(repositoryClass: "Interfaces\Repository\ExercisePythonRepository")]
+#[ORM\Table(name: "python_exercises")]
 class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: "integer")]
+    #[ORM\GeneratedValue]
     private $id;
-    /**
-     * @ORM\Column(name="link_solution", type="string", length=255, nullable=true)
-     * @var string
-     */
-    private $linkSolution = null;
-    /**
-     * @ORM\OneToMany(targetEntity="Interfaces\Entity\Project",mappedBy="exercise")
-     * @var Project
-     */
+
+    #[ORM\Column(name: "link_solution", type: "string", length: 255, nullable: true)]
+    private ?string $linkSolution = null;
+
+    #[ORM\OneToMany(targetEntity: "Interfaces\Entity\Project", mappedBy: "exercise")]
     private $projects;
 
-    /**
-     * @ORM\Column(name="secret_word", type="string", length=100, nullable=true)
-     * @var string
-     */
-    private $secretWord = null;
-    /**
-     * @ORM\Column(name="function_name", type="string", length=100, nullable=false)
-     * @var string
-     */
-    private $functionName;
+    #[ORM\Column(name: "secret_word", type: "string", length: 100, nullable: true)]
+    private ?string $secretWord = null;
 
-    public function __construct($functionName)
+    #[ORM\Column(name: "function_name", type: "string", length: 100, nullable: false)]
+    private string $functionName;
+
+    public function __construct(string $functionName)
     {
         if ($functionName === null) {
             throw new EntityDataIntegrityException("functionName cannot be null");
@@ -57,87 +44,56 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
         $this->projects = new ArrayCollection();
     }
 
-    /**
-     * @return integer
-     */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * @return string
-     */
-    public function getLinkSolution()
+    public function getLinkSolution(): ?string
     {
         return $this->linkSolution;
     }
 
-    /**
-     * @return Project
-     */
-    public function getProjects()
+    public function getProjects(): ArrayCollection
     {
         return $this->projects;
     }
 
-    /**
-     * @return string
-     */
-    public function getSecretWord()
+    public function getSecretWord(): ?string
     {
         return $this->secretWord;
     }
 
-    /**
-     * @return string
-     */
-    public function getFunctionName()
+    public function getFunctionName(): string
     {
         return $this->functionName;
     }
 
-    /**
-     * @param int $id
-     * @return integer
-     */
-    public function setId($id)
+    public function setId(int $id): void
     {
         $this->id = $id;
     }
 
-    /**
-     * @param string $linkSolution
-     */
-    public function setLinkSolution($id)
+    public function setLinkSolution(?string $linkSolution): void
     {
-        $this->linkSolution = $id;
+        $this->linkSolution = $linkSolution;
     }
 
-    /**
-     * @param Project $project
-     */
-    public function setProject($project)
+    public function setProject(Project $project): void
     {
         if ($project instanceof Project) {
-            $this->project = $project;
+            $this->projects[] = $project;
         } else {
             throw new EntityDataIntegrityException("project needs to be an instance of Project");
         }
     }
 
-    /**
-     * @param string $secretWord
-     */
-    public function setSecretWord($secretWord)
+    public function setSecretWord(?string $secretWord): void
     {
         $this->secretWord = $secretWord;
     }
 
-    /**
-     * @param string $functionName
-     */
-    public function setFunctionName($functionName)
+    public function setFunctionName(string $functionName): void
     {
         if ($functionName === null) {
             throw new EntityDataIntegrityException("functionName cannot be null");
@@ -149,7 +105,8 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("functionName needs to be string");
         }
     }
-    public function copy($objectToCopyFrom)
+
+    public function copy($objectToCopyFrom): void
     {
         if ($objectToCopyFrom instanceof self) {
             $this->functionName = urldecode($objectToCopyFrom->functionName);
@@ -160,7 +117,7 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'id' => $this->getId(),
@@ -171,7 +128,7 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
         ];
     }
 
-    public static function jsonDeserialize($jsonDecoded)
+    public static function jsonDeserialize($jsonDecoded): self
     {
         $classInstance = new self("");
         foreach ($jsonDecoded as $attributeName => $attributeValue) {
