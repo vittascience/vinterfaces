@@ -2,13 +2,14 @@
 
 namespace Interfaces\Entity;
 
+use User\Entity\User;
+use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\MetaDataMatcher;
-use User\Entity\User;
+use Interfaces\Repository\ProjectLinkUserRepository;
 
 
-#[ORM\Entity(repositoryClass: Interfaces\Repository\ProjectLinkUserRepository::class)]
+#[ORM\Entity(repositoryClass: ProjectLinkUserRepository::class)]
 #[ORM\Table(name: "interfaces_projects_link_users")]
 class ProjectLinkUser
 {

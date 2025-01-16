@@ -3,8 +3,9 @@
 namespace Interfaces\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Interfaces\Repository\PythonWhitelistRepository;
 
-#[ORM\Entity(repositoryClass: Interfaces\Repository\PythonWhitelistRepository::class)]
+#[ORM\Entity(repositoryClass: PythonWhitelistRepository::class)]
 #[ORM\Table(name: "python_whitelist")]
 class PythonWhitelist implements \JsonSerializable, \Utils\JsonDeserializer
 {

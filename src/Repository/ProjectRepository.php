@@ -15,7 +15,9 @@ class ProjectRepository extends EntityRepository
             ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface, p.mode")
             ->from(Project::class, 'p')
             ->where('(p.user = :user AND p.deleted = :deleted AND p.interface = :interface)')
-            ->setParameters(['user' => $data['user'], 'deleted' => $data['deleted'], 'interface' => $data['interface']])
+            ->setParameter('user', $data['user'])
+            ->setParameter('deleted', $data['deleted'])
+            ->setParameter('interface', $data['interface'])
             ->getQuery()
             ->getResult();
         return $query;
@@ -29,7 +31,9 @@ class ProjectRepository extends EntityRepository
             ->from(Project::class, 'p')
             ->innerJoin(User::class,'u','WITH',"p.user=u.id")
             ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
-            ->setParameters(['public' => $data['public'], 'deleted' => $data['deleted'], 'interface' => $data['interface']])
+            ->setParameter('public', $data['public'])
+            ->setParameter('deleted', $data['deleted'])
+            ->setParameter('interface', $data['interface'])
             ->getQuery()
             ->getResult();
         return $query;
