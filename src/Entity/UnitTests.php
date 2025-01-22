@@ -43,7 +43,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         $this->id = $id;
     }
 
-    public function setExercise(ExercisePython $exercise): void
+    public function setExercise($exercise): void
     {
         if ($exercise instanceof ExercisePython) {
             $this->exercise = $exercise;
@@ -52,7 +52,7 @@ class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function setHint(?string $hint): void
+    public function setHint($hint): void
     {
         if (is_string($hint)) {
             $this->hint = $hint;

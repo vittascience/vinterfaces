@@ -43,7 +43,7 @@ class UnitTestsInputs implements \JsonSerializable, \Utils\JsonDeserializer
         $this->id = $id;
     }
 
-    public function setUnitTest(UnitTests $unitTest): void
+    public function setUnitTest($unitTest): void
     {
         if ($unitTest instanceof UnitTests) {
             $this->unitTest = $unitTest;
@@ -52,7 +52,7 @@ class UnitTestsInputs implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function setValue(?string $value): void
+    public function setValue($value): void
     {
         if (is_string($value) || $value === null) {
             $this->value = $value;

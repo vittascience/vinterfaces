@@ -30,7 +30,7 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
     #[ORM\Column(name: "function_name", type: "string", length: 100, nullable: false)]
     private string $functionName;
 
-    public function __construct(string $functionName)
+    public function __construct($functionName)
     {
         if ($functionName === null) {
             throw new EntityDataIntegrityException("functionName cannot be null");
@@ -79,7 +79,7 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
         $this->linkSolution = $linkSolution;
     }
 
-    public function setProject(Project $project): void
+    public function setProject($project): void
     {
         if ($project instanceof Project) {
             $this->projects[] = $project;
@@ -93,7 +93,7 @@ class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
         $this->secretWord = $secretWord;
     }
 
-    public function setFunctionName(string $functionName): void
+    public function setFunctionName($functionName): void
     {
         if ($functionName === null) {
             throw new EntityDataIntegrityException("functionName cannot be null");
