@@ -5,11 +5,8 @@ namespace Interfaces\Controller;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use User\Entity\User;
-use GuzzleHttp\Client;
 use User\Entity\Regular;
 use Interfaces\Entity\Project;
-use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Cookie\SetCookie;
 use Interfaces\Entity\UnitTests;
 use Interfaces\Entity\LtiProject;
 use Interfaces\Entity\ExercisePython;
@@ -326,6 +323,27 @@ class ControllerProject extends Controller
                     } else {
                         return $this->entityManager->getRepository('Interfaces\Entity\Project')
                             ->findBy(array("deleted" => false, "user" => $userFetched, "interface" => $data['interface']));
+                    }
+                }
+            },
+            'get_all_user_projects_for_all_interfaces' => function ($data) {
+                // To change
+                if ($data['user']) {
+                    $idUserToFetch = $data['user'];
+                } else {
+                    $idUserToFetch = $this->user['id'];
+                }
+                $userFetched = $this->entityManager->getRepository('User\Entity\User')
+                    ->findOneBy(array("id" => $idUserToFetch));
+                if ($userFetched === null) {
+                    return [];
+                } else {
+                    if ($data['user']) {
+                        return $this->entityManager->getRepository('Interfaces\Entity\Project')
+                            ->findBy(array("deleted" => false, "user" => $userFetched, "public" => true));
+                    } else {
+                        return $this->entityManager->getRepository('Interfaces\Entity\Project')
+                            ->findBy(array("deleted" => false, "user" => $userFetched));
                     }
                 }
             },
