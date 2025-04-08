@@ -676,8 +676,8 @@ class ControllerProject extends Controller
 
                 
                 // current project is exercise statement creator
-                if($projectFound->getIsExerciseStatementCreator()){
-
+                if($projectFound->getIsExerciseStatementCreator() && $projectFound->getExerciseStatement()) {
+                    
                     $exerciseStatement = $this->entityManager->getRepository(ExerciseStatement::class)->find($projectFound->getExerciseStatement()->getId());
 
                     // update the project, then remove the statement from interfaces_exercise_statement
