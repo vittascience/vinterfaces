@@ -69,6 +69,10 @@ class ControllerProject extends Controller
                     }
     
                     $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $this->user['id']));
+                    if (!$user) {
+                        http_response_code(401);
+                        return ['error' => 'user_not_connected'];
+                    }
                     $project = new Project($nameSanitized, $descriptionSanitized);
                     $project->setUser($user);
                     $project->setDateUpdated();
