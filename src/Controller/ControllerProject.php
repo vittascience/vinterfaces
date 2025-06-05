@@ -67,12 +67,13 @@ class ControllerProject extends Controller
                     if (!$nameSanitized) {
                         return ['error' => 'missing_data'];
                     }
-    
-                    $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $this->user['id']));
-                    if (!$user) {
+                    
+                    if ($this->user === null || !isset($this->user['id'])) {
                         http_response_code(401);
                         return ['error' => 'user_not_connected'];
                     }
+                    
+                    $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $this->user['id']));
                     $project = new Project($nameSanitized, $descriptionSanitized);
                     $project->setUser($user);
                     $project->setDateUpdated();
