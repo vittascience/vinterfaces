@@ -1411,7 +1411,9 @@ class ControllerProject extends Controller
         $project->link = !empty($incomingProject->link) ? htmlspecialchars($incomingProject->link) : '';
         if (isset($incomingProject->options)) {
             foreach ($incomingProject->options as $option => $value) {
-                $option = htmlspecialchars(strip_tags(trim($value)));
+                if (!$value instanceof stdClass) {
+                    $option = htmlspecialchars(strip_tags(trim($value)));
+                }
             }
             $project->options = $incomingProject->options;
         }
