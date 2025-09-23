@@ -253,9 +253,11 @@ class ControllerProject extends Controller
                 $project = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $projectLink));
 
-                // set current code and overide it if interface is Ai
+                // set current code and override it if interface is Ai (not generative)
                 $currentCode = $project->getCode();
-                if ($project->getInterface() == 'ai') {
+                $aiInterface = $project->getInterface() == 'ai';
+                $aiTextInterface = $project->getMode() == 'text'; // Generative AI text
+                if ($aiInterface && !$aiTextInterface) {
                     $currentCode = $this->getCodeFromAiInterface($project);
                 }
 
