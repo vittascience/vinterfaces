@@ -616,6 +616,18 @@ class ControllerProject extends Controller
                     return array('errors' => $errors);
                 }
 
+                // if this project link is already submitted, creating a draft is pointless
+                $alreadySubmitted = $this->entityManager
+                    ->getRepository(LtiProject::class)
+                    ->findOneBy(array(
+                        'user' => $user,
+                        'userProjectLink' => $projectLink,
+                        'isSubmitted' => true
+                    ));
+                if ($alreadySubmitted) {
+                    return $alreadySubmitted->jsonSerialize();
+                }
+
                 // set default params for doctrine query
                 $queryParams = array(
                     'user' => $user,
