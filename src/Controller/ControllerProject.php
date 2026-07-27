@@ -28,8 +28,23 @@ class ControllerProject extends Controller
                     ->findBy(array("deleted" => false, "interface" => $data['interface']));
             },
             'get_all_public' => function ($data) {
-                return $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->getSummaryPublicProjects(array("public" => true, "deleted" => false, "interface" => $data['interface']));
+                $limit = isset($data['limit']) ? max(1, min(100, (int) $data['limit'])) : 30;
+                $offset = isset($data['offset']) ? max(0, (int) $data['offset']) : 0;
+                $search = isset($data['search']) ? trim($data['search']) : '';
+                $results = $this->entityManager->getRepository('Interfaces\Entity\Project')
+                    ->getSummaryPublicProjects(array(
+                        "public" => true,
+                        "deleted" => false,
+                        "interface" => $data['interface'],
+                        "limit" => $limit,
+                        "offset" => $offset,
+                        "search" => $search
+                    ));
+                $hasMore = count($results) > $limit;
+                if ($hasMore) {
+                    array_pop($results);
+                }
+                return array('projects' => $results, 'hasMore' => $hasMore);
             },
             'get_by_link' => function ($data) {
                 $link = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $data['link']);

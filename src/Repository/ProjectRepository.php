@@ -20,19 +20,28 @@ class ProjectRepository extends EntityRepository
             ->getResult();
         return $query;
     }
-    //"public" => true, "deleted" => false, "interface" => $data['interface']
+    //"public" => true, "deleted" => false, "interface" => $data['interface'], "limit" => 30, "offset" => 0, "search" => ""
     public function getSummaryPublicProjects($data)
     {
-        $query = $this->getEntityManager()
+        $qb = $this->getEntityManager()
             ->createQueryBuilder()
             ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface, p.mode, CONCAT(u.firstname,' ',u.surname) AS authorFullname, u.id AS authorId")
             ->from(Project::class, 'p')
-            ->innerJoin(User::class,'u','WITH',"p.user=u.id")
+            ->innerJoin(User::class, 'u', 'WITH', "p.user=u.id")
             ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
             ->setParameters(['public' => $data['public'], 'deleted' => $data['deleted'], 'interface' => $data['interface']])
-            ->getQuery()
-            ->getResult();
-        return $query;
+            ->orderBy('p.dateUpdated', 'DESC');
+
+        if (!empty($data['search'])) {
+            $qb->andWhere('(p.name LIKE :search OR p.description LIKE :search OR u.firstname LIKE :search OR u.surname LIKE :search)')
+                ->setParameter('search', '%' . $data['search'] . '%');
+        }
+
+        // Fetch one extra row so the caller can tell whether more pages remain without a separate COUNT query.
+        $qb->setFirstResult($data['offset'])
+            ->setMaxResults($data['limit'] + 1);
+
+        return $qb->getQuery()->getResult();
     }
 
     public function getByLinks(array $links)
