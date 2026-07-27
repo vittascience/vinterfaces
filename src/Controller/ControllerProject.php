@@ -36,6 +36,14 @@ class ControllerProject extends Controller
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $link, "deleted" => false));
             },
+            'get_by_links' => function ($data) {
+                $links = (isset($data['links']) && is_array($data['links'])) ? $data['links'] : [];
+                $sanitizedLinks = array_map(function ($link) {
+                    return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $link);
+                }, $links);
+                return $this->entityManager->getRepository('Interfaces\Entity\Project')
+                    ->getByLinks($sanitizedLinks);
+            },
             'get_by_user' => function ($data) {
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->getSummaryPersonalProjects(array("user" => $this->user['id'], "deleted" => false, "interface" => $data['interface']));

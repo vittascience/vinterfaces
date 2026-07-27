@@ -34,4 +34,20 @@ class ProjectRepository extends EntityRepository
             ->getResult();
         return $query;
     }
+
+    public function getByLinks(array $links)
+    {
+        if (count($links) === 0) {
+            return [];
+        }
+        return $this->getEntityManager()
+            ->createQueryBuilder()
+            ->select('p')
+            ->from(Project::class, 'p')
+            ->where('p.link IN (:links) AND p.deleted = :deleted')
+            ->setParameter('links', $links)
+            ->setParameter('deleted', false)
+            ->getQuery()
+            ->getResult();
+    }
 }
