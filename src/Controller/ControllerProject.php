@@ -56,8 +56,15 @@ class ControllerProject extends Controller
                 $sanitizedLinks = array_map(function ($link) {
                     return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $link);
                 }, $links);
-                return $this->entityManager->getRepository('Interfaces\Entity\Project')
+                $projects = $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->getByLinks($sanitizedLinks);
+                // Routing.php json_encode()s this return value as a whole: a single project with malformed
+                // data (e.g. invalid UTF-8 in its code/description) would make the WHOLE batch response empty
+                // instead of failing just for itself, like it did when each link was fetched one by one. Drop
+                // those individually so the rest of the batch still loads.
+                return array_values(array_filter($projects, function ($project) {
+                    return json_encode($project) !== false;
+                }));
             },
             'get_by_user' => function ($data) {
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
