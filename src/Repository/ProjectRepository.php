@@ -44,6 +44,26 @@ class ProjectRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    // Same filters as getSummaryPublicProjects, kept separate so the paginated fetch never pays for a
+    // COUNT(); the caller only needs this once, for the total shown in the UI badge.
+    public function countPublicProjects($data)
+    {
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
+            ->select('COUNT(p.id)')
+            ->from(Project::class, 'p')
+            ->innerJoin(User::class, 'u', 'WITH', "p.user=u.id")
+            ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
+            ->setParameters(['public' => $data['public'], 'deleted' => $data['deleted'], 'interface' => $data['interface']]);
+
+        if (!empty($data['search'])) {
+            $qb->andWhere('(p.name LIKE :search OR p.description LIKE :search OR u.firstname LIKE :search OR u.surname LIKE :search)')
+                ->setParameter('search', '%' . $data['search'] . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     public function getByLinks(array $links)
     {
         if (count($links) === 0) {

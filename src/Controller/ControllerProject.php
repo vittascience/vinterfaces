@@ -44,7 +44,19 @@ class ControllerProject extends Controller
                 if ($hasMore) {
                     array_pop($results);
                 }
-                return array('projects' => $results, 'hasMore' => $hasMore);
+                $response = array('projects' => $results, 'hasMore' => $hasMore);
+                // Only queried on the first page: the badge needs the true total once, not on every
+                // scroll-triggered page fetch.
+                if ($offset === 0) {
+                    $response['total'] = $this->entityManager->getRepository('Interfaces\Entity\Project')
+                        ->countPublicProjects(array(
+                            "public" => true,
+                            "deleted" => false,
+                            "interface" => $data['interface'],
+                            "search" => $search
+                        ));
+                }
+                return $response;
             },
             'get_by_link' => function ($data) {
                 $link = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $data['link']);
