@@ -195,6 +195,18 @@ class ControllerProject extends Controller
                 }
 
                 if ($canUpdateProject || $projectSharedStatus) {
+                    if (!empty($sanitizedProject->dateUpdated)) {
+                        $knownDate = $this->parseKnownDateUpdated($sanitizedProject->dateUpdated);
+                        $serverDate = $project->getDateUpdated();
+                        if ($knownDate && $serverDate && $knownDate->format('Y-m-d H:i:s') !== $serverDate->format('Y-m-d H:i:s')) {
+                            http_response_code(409);
+                            return [
+                                'conflict' => true,
+                                'serverProject' => $project,
+                                'message' => "Ce projet a été modifié ailleurs entre-temps.",
+                            ];
+                        }
+                    }
                     $project->setDateUpdated();
                     $project->setCode($sanitizedProject->code);
                     $project->setName($sanitizedProject->name);
@@ -1412,6 +1424,31 @@ class ControllerProject extends Controller
         }
     }
 
+    /**
+     * A client's "last known" dateUpdated arrives either as a plain ISO
+     * string (mobile) or as PHP DateTime's own jsonSerialize() shape
+     * ({date, timezone_type, timezone}, echoed back unchanged by a client
+     * that never touched it); accept both.
+     */
+    private function parseKnownDateUpdated($value)
+    {
+        if (is_string($value) && $value !== '') {
+            try {
+                return new \DateTime($value);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        if (is_object($value) && !empty($value->date)) {
+            try {
+                return new \DateTime($value->date);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private function sanitizeIncomingProject($incomingProject)
     {
         $project = new \stdClass();
@@ -1423,6 +1460,7 @@ class ControllerProject extends Controller
         $project->codeManuallyModified = !empty($incomingProject->codeManuallyModified) ? filter_var($incomingProject->codeManuallyModified, FILTER_VALIDATE_BOOLEAN) : false;
         $project->public = !empty($incomingProject->public) ? filter_var($incomingProject->public, FILTER_VALIDATE_BOOLEAN) : false;
         $project->link = !empty($incomingProject->link) ? htmlspecialchars($incomingProject->link) : '';
+        $project->dateUpdated = $incomingProject->dateUpdated ?? null;
         if (isset($incomingProject->options)) {
             foreach ($incomingProject->options as $option => $value) {
                 if (!($value instanceof stdClass) && !is_object($value)) {
