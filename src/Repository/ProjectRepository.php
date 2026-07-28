@@ -44,8 +44,6 @@ class ProjectRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    // Same filters as getSummaryPublicProjects, kept separate so the paginated fetch never pays for a
-    // COUNT(); the caller only needs this once, for the total shown in the UI badge.
     public function countPublicProjects($data)
     {
         $qb = $this->getEntityManager()

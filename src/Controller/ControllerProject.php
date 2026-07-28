@@ -45,8 +45,7 @@ class ControllerProject extends Controller
                     array_pop($results);
                 }
                 $response = array('projects' => $results, 'hasMore' => $hasMore);
-                // Only queried on the first page: the badge needs the true total once, not on every
-                // scroll-triggered page fetch.
+                // First page only — avoids a COUNT() on every scroll fetch.
                 if ($offset === 0) {
                     $response['total'] = $this->entityManager->getRepository('Interfaces\Entity\Project')
                         ->countPublicProjects(array(
