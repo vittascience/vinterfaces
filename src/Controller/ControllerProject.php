@@ -28,13 +28,54 @@ class ControllerProject extends Controller
                     ->findBy(array("deleted" => false, "interface" => $data['interface']));
             },
             'get_all_public' => function ($data) {
-                return $this->entityManager->getRepository('Interfaces\Entity\Project')
-                    ->getSummaryPublicProjects(array("public" => true, "deleted" => false, "interface" => $data['interface']));
+                $limit = isset($data['limit']) ? max(1, min(100, (int) $data['limit'])) : 30;
+                $offset = isset($data['offset']) ? max(0, (int) $data['offset']) : 0;
+                $search = isset($data['search']) ? trim($data['search']) : '';
+                $results = $this->entityManager->getRepository('Interfaces\Entity\Project')
+                    ->getSummaryPublicProjects(array(
+                        "public" => true,
+                        "deleted" => false,
+                        "interface" => $data['interface'],
+                        "limit" => $limit,
+                        "offset" => $offset,
+                        "search" => $search
+                    ));
+                $hasMore = count($results) > $limit;
+                if ($hasMore) {
+                    array_pop($results);
+                }
+                $response = array('projects' => $results, 'hasMore' => $hasMore);
+                // First page only — avoids a COUNT() on every scroll fetch.
+                if ($offset === 0) {
+                    $response['total'] = $this->entityManager->getRepository('Interfaces\Entity\Project')
+                        ->countPublicProjects(array(
+                            "public" => true,
+                            "deleted" => false,
+                            "interface" => $data['interface'],
+                            "search" => $search
+                        ));
+                }
+                return $response;
             },
             'get_by_link' => function ($data) {
                 $link = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $data['link']);
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
                     ->findOneBy(array("link" => $link, "deleted" => false));
+            },
+            'get_by_links' => function ($data) {
+                $links = (isset($data['links']) && is_array($data['links'])) ? $data['links'] : [];
+                $sanitizedLinks = array_map(function ($link) {
+                    return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $link);
+                }, $links);
+                $projects = $this->entityManager->getRepository('Interfaces\Entity\Project')
+                    ->getByLinks($sanitizedLinks);
+                // Routing.php json_encode()s this return value as a whole: a single project with malformed
+                // data (e.g. invalid UTF-8 in its code/description) would make the WHOLE batch response empty
+                // instead of failing just for itself, like it did when each link was fetched one by one. Drop
+                // those individually so the rest of the batch still loads.
+                return array_values(array_filter($projects, function ($project) {
+                    return json_encode($project) !== false;
+                }));
             },
             'get_by_user' => function ($data) {
                 return $this->entityManager->getRepository('Interfaces\Entity\Project')
