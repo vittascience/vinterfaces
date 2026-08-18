@@ -72,7 +72,26 @@ class ControllerProject extends Controller
                         http_response_code(401);
                         return ['error' => 'user_not_connected'];
                     }
-                    
+
+                    // Dedup for the mobile app's offline-queue retries
+                    // (vitta-mobile's queue.ts / TECHNICAL.md §6): a retried
+                    // "add" can't tell whether a previous attempt already
+                    // reached the server (write succeeded, only the response
+                    // was lost). client_ref stays the same across every retry
+                    // of the same queued creation — if we've already handled
+                    // it for this user, return that project instead of
+                    // creating a duplicate.
+                    if (!empty($data['client_ref'])) {
+                        $existing = $this->entityManager->getConnection()->fetchAssociative(
+                            'SELECT project_link FROM mobile_pending_creations WHERE user_ref = ? AND client_ref = ?',
+                            [$this->user['id'], $data['client_ref']]
+                        );
+                        if ($existing) {
+                            return $this->entityManager->getRepository('Interfaces\Entity\Project')
+                                ->findOneBy(array("link" => $existing['project_link'], "deleted" => false));
+                        }
+                    }
+
                     $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $this->user['id']));
                     $project = new Project($nameSanitized, $descriptionSanitized);
                     $project->setUser($user);
@@ -93,6 +112,17 @@ class ControllerProject extends Controller
                     }
                     $this->entityManager->persist($project);
                     $this->entityManager->flush();
+
+                    if (!empty($data['client_ref'])) {
+                        // INSERT IGNORE: the UNIQUE(user_ref, client_ref) key
+                        // silently wins the race if two retries of the same
+                        // creation ever land at the exact same time.
+                        $this->entityManager->getConnection()->executeStatement(
+                            'INSERT IGNORE INTO mobile_pending_creations (client_ref, user_ref, project_link) VALUES (?, ?, ?)',
+                            [$data['client_ref'], $this->user['id'], $project->getLink()]
+                        );
+                    }
+
                     return $project;
                 } catch (\Exception $e) {
                     return ['error' => $e->getMessage()];
