@@ -192,7 +192,7 @@ class ControllerProject extends Controller
                     try {
                         $validatedToken = JWT::decode(
                             $jwtToken,
-                            JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true))
+                            JWK::parseKeySet(json_decode(file_get_contents("https://rtc.vittascience.com/jwks"), true))
                         );
                     } catch (\Exception $e) {
                         $errors[] = ["errorType" => "token not validated"];
@@ -1166,7 +1166,7 @@ class ControllerProject extends Controller
                 try {
                     $validatedToken = JWT::decode(
                         $jwtToken,
-                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true))
+                        JWK::parseKeySet(json_decode(file_get_contents("https://rtc.vittascience.com/jwks"), true))
                     );
                 } catch (\Exception $e) {
                     $errors[] = ["errorType" => "token not validated"];
@@ -1296,7 +1296,7 @@ class ControllerProject extends Controller
                 try {
                     $validatedToken = JWT::decode(
                         $jwtToken, 
-                        JWK::parseKeySet(json_decode(file_get_contents("https://vittascience-rtc.com/jwks"), true))
+                        JWK::parseKeySet(json_decode(file_get_contents("https://rtc.vittascience.com/jwks"), true))
                     );
                 } catch (\Exception $e) {
                     $errors[] = ["errorType" => "token not validated"];
