@@ -59,12 +59,12 @@ class Project implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @var string
      */
-    #[ORM\Column(name: 'code', type: 'string', length: 16777215, nullable: false)]
+    #[ORM\Column(name: 'code', type: 'text', length: 16777215, nullable: false)]
     private $code = "";
     /**
      * @var string
      */
-    #[ORM\Column(name: 'code_language', type: 'string', length: 16777215, nullable: true)]
+    #[ORM\Column(name: 'code_language', type: 'text', length: 16777215, nullable: true)]
     private $codeText = "";
     /**
      * @var bool
