@@ -5,31 +5,27 @@ namespace Interfaces\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\PythonWhitelistRepository")
- * @ORM\Table(name="python_whitelist")
- */
+#[ORM\Table(name: 'python_whitelist')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\PythonWhitelistRepository::class)]
 class PythonWhitelist implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
 
     /**
-     * @ORM\Column(name="exercice_id", type="string", length=255, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'exercice_id', type: 'string', length: 255, nullable: false)]
     private $exerciceId;
 
 
     //boolean
     /**
-     * @ORM\Column(name="server_only", type="boolean", nullable=true)
      * @var boolean
      */
+    #[ORM\Column(name: 'server_only', type: 'boolean', nullable: true)]
     private $serverOnly;
 
 

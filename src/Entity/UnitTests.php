@@ -7,29 +7,25 @@ use Utils\MetaDataMatcher;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\UnitTestsRepository")
- * @ORM\Table(name="python_tests")
- */
+#[ORM\Table(name: 'python_tests')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\UnitTestsRepository::class)]
 class UnitTests implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython")
-     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id", onDelete="CASCADE")
      * @var ExercisePython
      */
+    #[ORM\JoinColumn(name: 'id_exercise', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\ExercisePython::class)]
     private $exercise;
     /**
-     * @ORM\Column(name="hint", type="string", length=240, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'hint', type: 'string', length: 240, nullable: true)]
     private $hint =  null;
 
     /**

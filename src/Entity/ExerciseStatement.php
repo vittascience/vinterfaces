@@ -10,22 +10,16 @@ use Utils\Exceptions\EntityOperatorException;
 use Doctrine\Common\Collections\ArrayCollection;
 use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ExerciseStatementRepository")
- * @ORM\Table(name="interfaces_exercise_statements")
- */
+#[ORM\Table(name: 'interfaces_exercise_statements')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\ExerciseStatementRepository::class)]
 class ExerciseStatement implements \JsonSerializable
 {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
 
-    /**
-     * @ORM\Column(name="statement_content", type="text", nullable=false)
-     */
+    #[ORM\Column(name: 'statement_content', type: 'text', nullable: false)]
     private $statementContent;
 
     /**

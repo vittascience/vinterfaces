@@ -7,115 +7,111 @@ use Doctrine\ORM\Mapping as ORM;
 use User\Entity\User;
 
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\PythonContainersRepository")
- * @ORM\Table(name="python_containers")
- */
+#[ORM\Table(name: 'python_containers')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\PythonContainersRepository::class)]
 class PythonContainers implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
 
     /**
-     * @ORM\Column(name="task_arn", type="string", length=255, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'task_arn', type: 'string', length: 255, nullable: false)]
     private $taskArn;
 
     /**
-     * @ORM\OneToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="is_attribued", referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'is_attribued', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OneToOne(targetEntity: \User\Entity\User::class)]
     private $isAttribued;
 
     /**
-     * @ORM\Column(name="access_key", type="string", length=255, nullable=true)
      * @var String
      */
+    #[ORM\Column(name: 'access_key', type: 'string', length: 255, nullable: true)]
     private $accessKey;
 
     /**
-     * @ORM\Column(name="public_ip", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'public_ip', type: 'string', length: 255, nullable: true)]
     private $publicIp;
 
     /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'created_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $createdAt;
 
     /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'updated_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $updatedAt;
 
     /**
-     * @ORM\OneToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OneToOne(targetEntity: \User\Entity\User::class)]
     private $user;
 
     /**
-     * @ORM\Column(name="container_key", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'container_key', type: 'string', length: 255, nullable: true)]
     private $containerKey;
 
     /**
-     * @ORM\Column(name="status", type="string", length=255, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'status', type: 'string', length: 255, nullable: false)]
     private $status;
 
     /**
-     * @ORM\Column(name="rule_node", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'rule_node', type: 'string', length: 255, nullable: true)]
     private $ruleNode;
 
     /**
-     * @ORM\Column(name="rule_vnc", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'rule_vnc', type: 'string', length: 255, nullable: true)]
     private $ruleVnc;
 
     /**
-     * @ORM\Column(name="target_node", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'target_node', type: 'string', length: 255, nullable: true)]
     private $targetNode;
 
     /**
-     * @ORM\Column(name="target_vnc", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'target_vnc', type: 'string', length: 255, nullable: true)]
     private $targetVnc;
 
     /**
-     * @ORM\Column(name="link", type="string", length=7, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'link', type: 'string', length: 7, nullable: true)]
     private $link;
 
     /**
-     * @ORM\Column(name="priority", type="string", length=25, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'priority', type: 'string', length: 25, nullable: true)]
     private $priority;
 
     /**
-     * @ORM\Column(name="process", type="integer", length=10, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'process', type: 'integer', length: 10, nullable: false)]
     private $process = 0;
 
     /**

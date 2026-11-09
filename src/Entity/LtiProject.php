@@ -7,49 +7,34 @@ use Doctrine\ORM\Mapping as ORM;
 use Interfaces\Repository\LtiProjectRepository;
 use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass=LtiProjectRepository::class)
- * @ORM\Table(name="interfaces_lti_projects")
- */
+// nullable: true everywhere on purpose: the former annotations' nullable="false" was a truthy string
+#[ORM\Table(name: 'interfaces_lti_projects')]
+#[ORM\Entity(repositoryClass: LtiProjectRepository::class)]
 class LtiProject {
     
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     private $user;
 
-    /**
-     * @ORM\Column(name="user_project_link",type="string",nullable="false")
-     */
+    #[ORM\Column(name: 'user_project_link', type: 'string', nullable: true)]
     private $userProjectLink = '';
 
-    /**
-     * @ORM\Column(name="lti_course_id",type="string",nullable="false")
-     */
+    #[ORM\Column(name: 'lti_course_id', type: 'string', nullable: true)]
     private $ltiCourseId = '';
 
-    /**
-     * @ORM\Column(name="lti_resource_id", type="string", nullable="false")
-     */
+    #[ORM\Column(name: 'lti_resource_id', type: 'string', nullable: true)]
     private $ltiResourceLinkId = '';
 
-    /**
-     * @ORM\Column(name="lti_target_link_uri", type="string", nullable="true")
-     */
+    #[ORM\Column(name: 'lti_target_link_uri', type: 'string', nullable: true)]
     private $ltiTargetLinkUri = '';
 
-    /**
-     * @ORM\Column(name="is_submitted", type="boolean",nullable="false")
-     */
+    #[ORM\Column(name: 'is_submitted', type: 'boolean', nullable: true)]
     private $isSubmitted = false;
 
     /**

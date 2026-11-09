@@ -9,38 +9,34 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Interfaces\Entity\Project;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ExercisePythonRepository")
- * @ORM\Table(name="python_exercises")
- */
+#[ORM\Table(name: 'python_exercises')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\ExercisePythonRepository::class)]
 class ExercisePython implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
     /**
-     * @ORM\Column(name="link_solution", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'link_solution', type: 'string', length: 255, nullable: true)]
     private $linkSolution = null;
     /**
-     * @ORM\OneToMany(targetEntity="Interfaces\Entity\Project",mappedBy="exercise")
      * @var Project
      */
+    #[ORM\OneToMany(targetEntity: \Interfaces\Entity\Project::class, mappedBy: 'exercise')]
     private $projects;
 
     /**
-     * @ORM\Column(name="secret_word", type="string", length=100, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'secret_word', type: 'string', length: 100, nullable: true)]
     private $secretWord = null;
     /**
-     * @ORM\Column(name="function_name", type="string", length=100, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'function_name', type: 'string', length: 100, nullable: false)]
     private $functionName;
 
     public function __construct($functionName)

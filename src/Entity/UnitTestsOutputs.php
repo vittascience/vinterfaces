@@ -7,30 +7,26 @@ use Utils\MetaDataMatcher;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\UnitTestsOutputsRepository")
- * @ORM\Table(name="python_tests_outputs")
- */
+#[ORM\Table(name: 'python_tests_outputs')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\UnitTestsOutputsRepository::class)]
 class UnitTestsOutputs implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /** 
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\UnitTests")
-     * @ORM\JoinColumn(name="id_unittest", referencedColumnName="id", onDelete="CASCADE")
      * @var UnitTests
      */
+    #[ORM\JoinColumn(name: 'id_unittest', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\UnitTests::class)]
     private $unitTest;
 
     /**
-     * @ORM\Column(name="value", type="string", length=1000, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'value', type: 'string', length: 1000, nullable: true)]
     private $value = null;
 
     /**
