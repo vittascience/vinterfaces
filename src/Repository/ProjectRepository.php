@@ -29,12 +29,12 @@ class ProjectRepository extends EntityRepository
             ->createQueryBuilder()
             ->select("p.id, p.name, p.description, p.link, p.dateUpdated, p.interface, p.mode, CONCAT(u.firstname,' ',u.surname) AS authorFullname, u.id AS authorId")
             ->from(Project::class, 'p')
-            ->innerJoin(User::class, 'u', 'WITH', "p.user=u.id")
+            ->innerJoin(User::class, 'u', 'ON', "p.user=u.id")
             ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
             ->setParameter('public', $data['public'])
             ->setParameter('deleted', $data['deleted'])
             ->setParameter('interface', $data['interface'])
-            ->orderBy('p.dateUpdated', 'DESC');
+            ->orderBy('p.dateUpdated', \SortDirection::Descending);
 
         if (!empty($data['search'])) {
             $qb->andWhere('(p.name LIKE :search OR p.description LIKE :search OR u.firstname LIKE :search OR u.surname LIKE :search)')
@@ -54,7 +54,7 @@ class ProjectRepository extends EntityRepository
             ->createQueryBuilder()
             ->select('COUNT(p.id)')
             ->from(Project::class, 'p')
-            ->innerJoin(User::class, 'u', 'WITH', "p.user=u.id")
+            ->innerJoin(User::class, 'u', 'ON', "p.user=u.id")
             ->where('(p.public = :public AND p.deleted = :deleted AND p.interface = :interface)')
             ->setParameter('public', $data['public'])
             ->setParameter('deleted', $data['deleted'])
