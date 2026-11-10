@@ -7,38 +7,28 @@ use Utils\MetaDataMatcher;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ExercisePythonFramesRepository")
- * @ORM\Table(name="python_exercise_frames")
- */
+#[ORM\Table(name: 'python_exercise_frames')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\ExercisePythonFramesRepository::class)]
 class ExercisePythonFrames implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython")
-     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\JoinColumn(name: 'id_exercise', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\ExercisePython::class)]
     private $exercise;
 
     /**
-     * @ORM\Column(name="frame", type="integer", nullable=false)
      * @var integer
      */
+    #[ORM\Column(name: 'frame', type: 'integer', nullable: false)]
     private $frame;
 
-    /**
-     * @ORM\Column(name="id_component", type="string", length=255, nullable=false)
-     */
+    #[ORM\Column(name: 'id_component', type: 'string', length: 255, nullable: false)]
     private $component;
 
-    /**
-     * @ORM\Column(name="value", type="string", nullable=false)
-     */
+    #[ORM\Column(name: 'value', type: 'string', nullable: false)]
     private $value;
 
 

@@ -9,136 +9,128 @@ use Interfaces\Entity\ExerciseStatement;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ProjectRepository")
- * @ORM\Table(name="interfaces_projects")
- */
+#[ORM\Table(name: 'interfaces_projects')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\ProjectRepository::class)]
 class Project implements \JsonSerializable, \Utils\JsonDeserializer
 {
     const REG_PROJECT_NAME = "/./";
     const REG_PROJECT_DESCRIPTION = "/./";
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
     private $id;
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExercisePython",inversedBy="projects")
-     * @ORM\JoinColumn(name="id_exercise", referencedColumnName="id")
-     */
+    #[ORM\JoinColumn(name: 'id_exercise', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\ExercisePython::class, inversedBy: 'projects')]
     private $exercise;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\ExerciseStatement", cascade={"persist","remove"})
-     * @ORM\JoinColumn(name="exercise_statement_id", referencedColumnName="id")
-     */
+    #[ORM\JoinColumn(name: 'exercise_statement_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\ExerciseStatement::class, cascade: ['persist', 'remove'])]
     private $exerciseStatement;
 
     /**
-     * @ORM\Column(name="project_name", type="string", length=100, nullable=false, options={"default":"Unamed"})
      * @var string
      */
+    #[ORM\Column(name: 'project_name', type: 'string', length: 100, nullable: false, options: ['default' => 'Unamed'])]
     private $name = "Unamed";
 
     /**
-     * @ORM\Column(name="interface", type="string", length=50, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'interface', type: 'string', length: 50, nullable: false)]
     private $interface;
     /**
-     * @ORM\Column(name="project_description", type="string", length=1000, nullable=true, options={"default":"No description"})
      * @var string
      */
+    #[ORM\Column(name: 'project_description', type: 'string', length: 1000, nullable: true, options: ['default' => 'No description'])]
     private $description = "No description";
     /**
-     * @ORM\Column(name="date_updated", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'date_updated', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $dateUpdated;
     /**
-     * @ORM\Column(name="code", type="string", length=16777215, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'code', type: 'text', length: 16777215, nullable: false)]
     private $code = "";
     /**
-     * @ORM\Column(name="code_language", type="string", length=16777215, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'code_language', type: 'text', length: 16777215, nullable: true)]
     private $codeText = "";
     /**
-     * @ORM\Column(name="manually_modified", type="boolean", nullable=false)
      * @var bool
      */
+    #[ORM\Column(name: 'manually_modified', type: 'boolean', nullable: false)]
     private $codeManuallyModified = false;
     /**
-     * @ORM\Column(name="is_public", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'is_public', type: 'boolean', nullable: false, options: ['default' => false])]
     private $public = false;
     /**
-     * @ORM\Column(name="link", type="string", length=255, unique=true, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'link', type: 'string', length: 255, unique: true, nullable: false)]
     private $link = null;
     /**
-     * @ORM\Column(name="mode", type="string", length=20, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'mode', type: 'string', length: 20, nullable: true)]
     private $mode = null;
     /**
-     * @ORM\Column(name="is_deleted", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'is_deleted', type: 'boolean', nullable: false, options: ['default' => false])]
     private $deleted = false;
 
     /**
-     * @ORM\Column(name="is_activity_solve", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'is_activity_solve', type: 'boolean', nullable: false, options: ['default' => false])]
     private $activitySolve = false;
 
     /**
-     * @ORM\Column(name="is_exercise_creator", type="boolean", nullable=false, options={"default":false})
      *
      * @var bool
      */
+    #[ORM\Column(name: 'is_exercise_creator', type: 'boolean', nullable: false, options: ['default' => false])]
     private $isExerciseCreator = false;
 
     /**
-     * @ORM\Column(name="is_exercise_statement_creator", type="boolean", nullable=false, options={"default":false})
      *
      * @var bool
      */
+    #[ORM\Column(name: 'is_exercise_statement_creator', type: 'boolean', nullable: false, options: ['default' => false])]
     private $isExerciseStatementCreator = false;
 
     /**
-     * @ORM\Column(name="shared_users", type="text", nullable=true)
      *
      * @var string
      */
+    #[ORM\Column(name: 'shared_users', type: 'text', nullable: true)]
     private $sharedUsers;
 
     /**
-     * @ORM\Column(name="shared_status", type="integer", nullable=false, options={"default":0})
      *
      * @var string
      */
+    #[ORM\Column(name: 'shared_status', type: 'integer', nullable: false, options: ['default' => 0])]
     private $sharedStatus = 0;
 
 
     /**
-     * @ORM\Column(name="options", type="text", nullable=true)
      * @var String
      */
+    #[ORM\Column(name: 'options', type: 'text', nullable: true)]
     private $options;
 
 

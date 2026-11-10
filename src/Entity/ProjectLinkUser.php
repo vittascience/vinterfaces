@@ -8,27 +8,25 @@ use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Interfaces\Repository\ProjectLinkUserRepository")
- * @ORM\Table(name="interfaces_projects_link_users")
- */
+#[ORM\Table(name: 'interfaces_projects_link_users')]
+#[ORM\Entity(repositoryClass: \Interfaces\Repository\ProjectLinkUserRepository::class)]
 class ProjectLinkUser
 {
 
 
     /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user;
     /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Interfaces\Entity\Project")
-     * @ORM\JoinColumn(name="project", referencedColumnName="id", onDelete="CASCADE")
      * @var Project
      */
+    #[ORM\JoinColumn(name: 'project', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \Interfaces\Entity\Project::class)]
     private $project;
 
 
